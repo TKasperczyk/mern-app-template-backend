@@ -7,5 +7,7 @@ module.exports = {
         '**/*.js',
         '!data/keyMap.js',
         '!/node_modules/',
+        '!jest.config.js',
+        '!jest.setup.js'
     ]
 };
