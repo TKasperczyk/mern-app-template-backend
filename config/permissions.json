@@ -1,0 +1,13 @@
+{
+    "admin": {
+        "data.user": "*"
+    },
+    "user": {
+        "data.user": {
+            "add": false,
+            "get": "function",
+            "update": "function",
+            "delete": "function"
+        }
+    }
+}

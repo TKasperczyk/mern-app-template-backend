@@ -1,0 +1,40 @@
+{
+    "openAuth": true,
+    "jwtKey": "fillThis",
+    "server": {
+        "port": 3001,
+        "rootDomain": "localhost"
+    },
+    "db": {
+        "mongo": {
+            "url": "mongodb://localhost/backend",
+            "user": "user",
+            "host": "localhost",
+            "port": 27017,
+            "password": "pass",
+            "database": "db",
+            "authDb": "authDb"
+        },
+        "redis": {
+            "port": 6379,
+            "host": "127.0.0.1",
+            "password": "pass"
+        }
+    },
+    "logging": {
+        "disableHttp": false,
+        "maxMetaLength": 500,
+        "prettyMeta": true,
+        "level": "api"
+    },
+    "scheduler": {
+        "example": {
+            "enabled": false,
+            "cronTime": "0 0 * * *",
+            "logging": {
+                "state": true,
+                "debug": true
+            }
+        }
+    }
+}
