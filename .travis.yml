@@ -1,0 +1,9 @@
+language: node_js
+node_js:
+  - '13'
+script:
+  - npm run coveralls
+install: npm install
+services:
+  - mongodb
+  - redis-server

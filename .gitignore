@@ -9,12 +9,6 @@ node_modules
 /.pnp
 .pnp.js
 
-# coveralls
-.coveralls.yml
-
-# travis
-.travis.yml
-
 # testing
 /coverage
 
