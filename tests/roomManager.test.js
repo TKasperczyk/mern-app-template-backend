@@ -3,9 +3,13 @@ const {promisify} = require('util');
 const config = require('../app/config');
 const RoomManager = require('../app/roomManager');
 
-const redisClient = redis(config.db.redis.port, config.db.redis.host, {
-    auth_pass: config.db.redis.password,
-});
+let authOptions = {};
+if (config.db.redis.auth){
+    authOptions = {
+        auth_pass: config.db.redis.password,
+    };
+}
+const redisClient = redis(config.db.redis.port, config.db.redis.host, authOptions);
 const rClientPromisified = {
     hget: promisify(redisClient.hget).bind(redisClient),
     hgetall: promisify(redisClient.hgetall).bind(redisClient),

@@ -1,5 +1,4 @@
 {
-    "openAuth": true,
     "jwtKey": "fillThis",
     "server": {
         "port": 3001,
@@ -13,12 +12,14 @@
             "port": 27017,
             "password": "pass",
             "database": "db",
-            "authDb": "authDb"
+            "authDb": "authDb",
+            "auth": false
         },
         "redis": {
             "port": 6379,
             "host": "127.0.0.1",
-            "password": "pass"
+            "password": "pass",
+            "auth": false
         }
     },
     "logging": {

@@ -21,12 +21,14 @@ const ioServer = (app) => {
     require('./auth')(io);
     //We're using only websockets
     io.set('transports', ['websocket']);
-    const pubClient = redis(config.db.redis.port, config.db.redis.host, {
-        auth_pass: config.db.redis.password
-    });
-    const subClient = redis(config.db.redis.port, config.db.redis.host, {
-        auth_pass: config.db.redis.password
-    });
+    let authOptions = {};
+    if (config.db.redis.auth){
+        authOptions = {
+            auth_pass: config.db.redis.password,
+        };
+    }
+    const pubClient = redis(config.db.redis.port, config.db.redis.host, authOptions);
+    const subClient = redis(config.db.redis.port, config.db.redis.host, authOptions);
     io.adapter(adapter({
         pubClient,
         subClient

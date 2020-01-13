@@ -47,9 +47,13 @@ const h = require('../helpers');
 class RoomManager {
     //Make sure you don't override an existing Redis database - use a number that's not already used by your Redis instance
     constructor(dbId) {
-        this._client = redis(config.db.redis.port, config.db.redis.host, {
-            auth_pass: config.db.redis.password,
-        });
+        let authOptions = {};
+        if (config.db.redis.auth){
+            authOptions = {
+                auth_pass: config.db.redis.password,
+            };
+        }
+        this._client = redis(config.db.redis.port, config.db.redis.host, authOptions);
         this._redisPromisified = {
             hget: promisify(this._client.hget).bind(this._client),
             hgetall: promisify(this._client.hgetall).bind(this._client),

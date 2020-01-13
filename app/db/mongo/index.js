@@ -11,19 +11,28 @@ const logger = require('../../logger').appLogger;
 
 logger.info(`Connecting to ${config.db.mongo.url}`, {identifier: 'db mongo'});
 
-mongoose.connect(config.db.mongo.url, {
-    user: config.db.mongo.user,
-    pass: config.db.mongo.password,
-    auth: {
-        authdb: config.db.mongo.authDb
-    },
+const connectionOptions = {
     connectTimeoutMS: 5000,
     //Get rid of depracation warnings
     useNewUrlParser: true,
     useCreateIndex: true,
     useUnifiedTopology: true,
     useFindAndModify: false
-}).catch((error) => {
+};
+
+let authOptions = {};
+if (config.db.auth){
+    authOptions = {
+        user: config.db.mongo.user,
+        pass: config.db.mongo.password,
+        auth: {
+            authdb: config.db.mongo.authDb
+        },
+    }
+};
+
+const mongoOptions = Object.assign({}, connectionOptions, authOptions);
+mongoose.connect(config.db.mongo.url, mongoOptions).catch((error) => {
     logger.error(`Mongoose error: ${h.optionalStringify(error)}`, {identifier: 'db mongo'});
 });
 
