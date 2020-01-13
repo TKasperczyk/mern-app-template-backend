@@ -3,6 +3,8 @@ node_js:
   - '13'
 script:
   - npm run coveralls
+before_install:
+  - mv ./config/config.sample.json ./config/config.json
 install: npm install
 services:
   - mongodb
