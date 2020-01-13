@@ -4,16 +4,12 @@ module.exports = (workerId) => {
     process.env.id = workerId;
 
     const express = require('express');
-    const backend = require('./app');
     const passport = require('passport');
-    const app = express();
-    const appRoot = require('app-root-path');
     const morgan = require('morgan');
     const helmet = require('helmet');
-
-
-    /* Static routes */
-    app.use(express.static(`${appRoot}/public/`));
+    const path = require('path');
+    const backend = require('./app');
+    const app = express();
 
     /* Middleware */
     app.use(helmet()); //For security

@@ -15,8 +15,8 @@
 **/
 
 const winston = require('winston');
-const appRoot = require('app-root-path');
 const colors = require('colors');
+const path = require('path');
 require(`winston-daily-rotate-file`);
 const config = require('../config');
 
@@ -162,7 +162,7 @@ const httpLogger = winston.createLogger({
     levels: customLevels.levels,
     transports: [
         new (winston.transports.DailyRotateFile)({
-            filename: `${appRoot}/logs/http.log`,
+            filename: path.resolve(__dirname, '../../logs/http.log'),
             name: 'httpFile',
             datePattern: 'YYYY-MM-DD-HH',
             level: 'http',

@@ -7,11 +7,10 @@
 
 //Using graceful-fs to limit the amount of open file descriptors
 const fs = require('graceful-fs');
-const appRoot = require('app-root-path');
+const path = require('path');
 const h = require('../helpers');
 
-//The path will be overwritten in our unit tests, therefore it's not const
-let configPath = `${appRoot}/config/config.json`;
+const configPath = path.resolve(__dirname, '../../config/config.json');
 //The config can be reloaded, therefore it's not const
 let configJson = null;
 

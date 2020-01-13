@@ -18,8 +18,8 @@
 
 //Using graceful-fs to limit the amount of open file descriptors
 const fs = require('graceful-fs');
-const appRoot = require('app-root-path');
 const dotObj = require('dot-object');
+const path = require('path');
 const h = require('../helpers');
 const db = require('../db').mongo.models;
 //This will be overwritten in unit tests, therefore it can't be const
@@ -31,7 +31,7 @@ const logger = require('../logger').appLogger;
 **/
 let permissions = null;
 const loadPermissionsJson = () => {
-    const permissionsPath = `${appRoot}/config/permissions.json`;
+    const permissionsPath = path.resolve(__dirname, '../../config/permissions.json');
     if (fs.existsSync(permissionsPath)){
         try{
             permissions = JSON.parse(fs.readFileSync(permissionsPath, 'utf8'));
