@@ -11,7 +11,7 @@ const h = require(`../helpers`);
 const logger = require(`../logger`).appLogger;
 
 const workers = {
-    example: {
+    /*example: {
         worker: async (nextExecutionDate) => {
             const callId = h.generateCallId();
             try{
@@ -25,12 +25,12 @@ const workers = {
             }
         },
         currentlyRunning: false
-    },
+    },*/
 };
 
 module.exports = () => {
     return {
-        example: schedule.scheduleJob(config.scheduler.example.cronTime, async function() {
+        /*example: schedule.scheduleJob(config.scheduler.example.cronTime, async function() {
             if (config.scheduler.example.enabled === false){
                 return;
             }
@@ -39,6 +39,6 @@ module.exports = () => {
                 return;
             }
             return await workers.example.worker(this.nextInvocation());
-        }),
+        }),*/
     };
 };

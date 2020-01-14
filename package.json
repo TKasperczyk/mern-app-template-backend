@@ -7,8 +7,8 @@
   "scripts": {
     "start": "node cluster.js",
     "dev": "nodemon server.js",
-    "coveralls": "jest --forceExit --runInBand --coverage --coverageReporters=text-lcov | ./node_modules/coveralls/bin/coveralls.js",
-    "test": "jest --forceExit --runInBand --coverage"
+    "coveralls": "jest --forceExit --runInBand --coverage --coverageReporters=text-lcov",
+    "test": "jest --forceExit --runInBand"
   },
   "repository": {
     "type": "git",

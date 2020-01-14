@@ -95,7 +95,7 @@ const appPrintf = ({colorize = false}) => {
         let meta = '';
         //Optionally colorize metadata
         if (typeof metaString === 'string' && metaString.length > 0){
-            meta = colorize ? colors.dim('| META: ' + metaString) : metaString;
+            meta = colorize ? colors.dim(`| META: ${metaString}`) : `| META: ${metaString}`;
         }
         const workerId = process.env.id !== undefined ? process.env.id : '';
         const workerIdColorized = colorize ? colors.bold.blue(workerId) : workerId;
@@ -184,5 +184,8 @@ httpLogger.stream = { //This will be used by Morgan
 
 module.exports = {
     appLogger,
-    httpLogger
+    httpLogger,
+    __private: {
+        appPrintf
+    }
 };
