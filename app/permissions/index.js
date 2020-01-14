@@ -29,9 +29,10 @@ const logger = require('../logger').appLogger;
 /**
     Loads the permissions.json file into the global `permissions` variable
 **/
+//These could be const, but will be changed in tests
 let permissions = null;
+let permissionsPath = path.resolve(__dirname, '../../config/permissions.json');
 const loadPermissionsJson = () => {
-    const permissionsPath = path.resolve(__dirname, '../../config/permissions.json');
     if (fs.existsSync(permissionsPath)){
         try{
             permissions = JSON.parse(fs.readFileSync(permissionsPath, 'utf8'));
@@ -48,6 +49,8 @@ const loadPermissionsJson = () => {
     Throws an error if there's something wrong with the structure
 **/
 const validatePermissions = () => {
+    //Some models have dots in their names, so we can't use the default dot
+    const picker = new dotObj('->');
     try{
         for (let roleName in permissions){
             const rolePermissions = permissions[roleName];
@@ -61,7 +64,7 @@ const validatePermissions = () => {
                 }
                 if (typeof modelPermissions === 'string'){
                     if (modelPermissions !== '*'){
-                        throw(`Unknown value for permissions.[${roleName}][${modelName}]: ${modelName}. Supported values: "*", object`);
+                        throw(`Unknown value for permissions.[${roleName}][${modelName}]. Supported values: "*", object`);
                     } else {
                         continue;
                     }
@@ -75,7 +78,7 @@ const validatePermissions = () => {
                         if (actionPermission !== 'function'){
                             throw(`Unknown value for permissions[${roleName}][${modelName}][${actionName}] Supported values: "function", boolean`);
                         } else {
-                            if (!permissionFunctions[roleName][modelName][actionName]){
+                            if (typeof picker.pick(`${roleName}->${modelName}->${actionName}`, permissionFunctions) !== 'function'){
                                 throw (`There's no function defined for permissions[${roleName}][${modelName}][${actionName}]. Go to /app/permissions/permissionFunctions.js and define it`);
                             }
                         }

@@ -6,9 +6,11 @@ describe('db', () => {
     let newUserModel;
     let retrievedUser;
 
-    afterAll(() => {
-        //No beforeAll because we don't know if the database is working yet
+    beforeAll(() => {
         return testH.fn.cleanMockUsers();
+    });
+    afterAll(() => {
+        //return testH.fn.cleanMockUsers();
     });
     it('should expose the user model', () => {
         //Check if the user model is exposed
@@ -25,35 +27,28 @@ describe('db', () => {
     });
     it('should allow to create a user', async () => {
         newUserModel = new db.mongo.models['data.user'](testH.userMocks.basic());
-        await expect((async () => {
-            await newUserModel.save();
-        })()).resolves.not.toThrow();
+        await expect(newUserModel.save()).resolves.not.toThrow();
     });
     it('should not allow to create a user with an existing login (username)', async () => {
         newUserModel = new db.mongo.models['data.user'](testH.userMocks.basic());
-        await expect((async () => {
-            await newUserModel.save();
-        })()).rejects.toThrow();
+        await expect(newUserModel.save()).rejects.toEqual(expect.any(Error));
     });
     it('should not allow to create a user with a wrong username', async () => {
         //Test empty logins
         newUserModel = new db.mongo.models['data.user'](testH.userMocks.basic());
         newUserModel.login = '';
-        await expect((async () => {
-            await newUserModel.save();
-        })()).rejects.toThrow();
+        await expect(newUserModel.save()).rejects.toEqual(expect.any(Error));
         //Test special char logins
         newUserModel.login = 'someChars@#';
-        await expect((async () => {
-            await newUserModel.save();
-        })()).rejects.toThrow();
+        await expect(newUserModel.save()).rejects.toEqual(expect.any(Error));
     });
     it('should set the default role for the created user', () => {
         expect(newUserModel.role).toBe('user');
     });
     it('should hide the password when retrieving the created user', async () => {
         await expect((async () => {
-            retrievedUser = await db.mongo.models['data.user'].findById(newUserModel._id.toString());
+            console.log(newUserModel._id.toString());
+            retrievedUser = await db.mongo.models['data.user'].find({login: newUserModel.login});
         })()).resolves.not.toThrow();
         expect(retrievedUser).toBeTruthy();
         expect(retrievedUser.password).toBe(undefined);

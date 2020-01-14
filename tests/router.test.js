@@ -251,6 +251,14 @@ describe('router', () => {
             expect(res.body.data).toHaveProperty('login');
             expect(res.body.data.login).toEqual(mockUser1.login);
         });
+        it('should not allow to PATCH a user with a valid token (admin) and missing mandatory arguments', async () => {
+            const res = await supertest(app)
+                .patch(`/api/user/${mockUser1Payload._id}`)
+                .set('Authorization', `Bearer ${mockUserAdminToken}`)
+                .expect(400);
+            expect(res.body.status).toEqual(false);
+            expect(res.body.error).toBe('Something went wrong while performing an API call: Incorrect or incomplete arguments');
+        });
         it('should not allow to DELETE all the users with a valid token', async () => {
             const res = await supertest(app)
                 .delete(`/api/user`)

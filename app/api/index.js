@@ -28,6 +28,9 @@ const generics = {
             if (inputObj === undefined || typeof inputObj !== 'object'){
                 throw('Wrong inputObj argument');
             }
+            if (typeof modelName !== 'string' || mongoDb[modelName] === undefined){
+                throw('Wrong modelName argument');
+            }
             logger.api(`Creating a new ${modelName}`, {logging, identifier: `api ${logPathPrefix}${modelName} add`, callId});
             let newObj = new mongoDb[modelName](inputObj);
             if (typeof modifierFunc === 'function'){
@@ -83,7 +86,7 @@ const generics = {
                 throw(`Wrong id argument: ${id === undefined ? `undefined` : id} ${typeof id} ${typeof id === `string` ? !(/^[a-fA-F0-9]{24}$/).test(id) : 'regex not applicable'}`);
             }
             if (inputObj === undefined || typeof inputObj !== 'object'){
-                throw(`Wrong ${modelName} argument`);
+                throw(`Wrong inputObj argument`);
             }
             if (typeof modifierFunc === 'function'){
                 inputObj = modifierFunc(inputObj);

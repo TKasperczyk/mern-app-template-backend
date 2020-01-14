@@ -126,7 +126,7 @@ module.exports = () => {
         'patch': {
             '/api/user/:id': (req, res) => {
                 if (!h.checkMandatoryArgs({argMap: { data: true }, args: req.body})){
-                    return handleError(req, res, 'Incorrect or incomplete arguments');
+                    return handleError(req, res, 'Incorrect or incomplete arguments', 400);
                 }
                 if (!permissions(req.user.role, 'data.user', 'update', {data: {id: req.params.id}, user: req.user})){
                     return handleError(req, res, 'You don\'t have sufficient permissions to perform this action', 401);

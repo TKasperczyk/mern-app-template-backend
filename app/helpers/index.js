@@ -73,7 +73,7 @@ module.exports = {
     /**
         Generates a password hash from the provided cleartext password
     **/
-    generateHash: (password, rounds = 13) => {
+    generateHash: (password, rounds = 12) => {
         return bCrypt.hashSync(password, bCrypt.genSaltSync(rounds), null);
     },
     /**

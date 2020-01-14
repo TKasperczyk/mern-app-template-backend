@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const testH = require('./helpers');
 const h = require('../app/helpers');
 const auth = rewire('../app/auth');
+const db = require('../app/db').mongo.models;
 
 const reqMock = {
     connection: {
@@ -10,6 +11,7 @@ const reqMock = {
     }
 };
 const userMock = testH.userMocks.basic();
+const userMock2 = testH.userMocks.alt();
 
 describe('auth', () => {
     let jwtPayload; //Will be set in the localAuthProcessor test. Will hold a user object
@@ -45,6 +47,16 @@ describe('auth', () => {
                 done();
             });
         });
+        it('should deny users when there\'s a database problem', (done) => {
+            const backupModel = db['data.user'];
+            db['data.user'] = null;
+            auth.__get__('registerProcessor')(reqMock, userMock2.login, userMock2.password, (error, user) => {
+                expect(error).toBe('Unknown authentication error');
+                expect(user).toBeFalsy();
+                db['data.user'] = backupModel;
+                done();
+            });
+        });
     });
     describe('localAuthProcessor', () => {
         it('should authenticate users with correct credentials without exposing their password in the result', (done) => {
@@ -63,6 +75,16 @@ describe('auth', () => {
             auth.__get__('localAuthProcessor')(reqMock, wrongLoginMock, userMock.password, (error, user) => {
                 expect(error).toBe('Authentication error');
                 expect(user).toBeFalsy();
+                done();
+            });
+        });
+        it('should deny users when there\'s a database problem', (done) => {
+            const backupModel = db['data.user'];
+            db['data.user'] = null;
+            auth.__get__('localAuthProcessor')(reqMock, userMock.login, userMock.password, (error, user) => {
+                expect(error).toBe('Unknown authentication error');
+                expect(user).toBeFalsy();
+                db['data.user'] = backupModel;
                 done();
             });
         });
@@ -99,6 +121,16 @@ describe('auth', () => {
             auth.__get__('jwtAuthProcessor')(reqMock, jwtPayload, (error, user) => {
                 expect(error).toBe('Authentication error');
                 expect(user).toBeFalsy();
+                done();
+            });
+        });
+        it('should deny users when there\'s a database problem', (done) => {
+            const backupModel = db['data.user'];
+            db['data.user'] = null;
+            auth.__get__('jwtAuthProcessor')(reqMock, jwtPayload, (error, user) => {
+                expect(error).toBe('Unknown authentication error');
+                expect(user).toBeFalsy();
+                db['data.user'] = backupModel;
                 done();
             });
         });
