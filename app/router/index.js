@@ -8,7 +8,7 @@ const passport = require('passport');
 const router = require('express').Router();
 const h = require('../helpers');
 const acl = require('../acl');
-const permissions = require('../permissions').check;
+const permissions = require('../permissions');
 const logger = require('../logger').appLogger;
 const api = require('../api');
 const loginMiddleware = require('./middleware/login');
@@ -116,7 +116,7 @@ module.exports = () => {
     const routes = {
         'get': {
             '/api/user/:id?': (req, res) => {
-                if (!permissions(req.user.role, 'data.user', 'get', {data: {id: req.params.id}, user: req.user})){
+                if (!permissions.check(req.user.role, 'data.user', 'get', {data: {id: req.params.id}, user: req.user})){
                     return handleError(req, res, 'You don\'t have sufficient permissions to perform this action', 401);
                 }
                 performApiCall({req, res, apiFunc: api.user.get, args: { id: req.params.id }});
@@ -129,7 +129,7 @@ module.exports = () => {
                 if (!h.checkMandatoryArgs({argMap: { data: true }, args: req.body})){
                     return handleError(req, res, 'Incorrect or incomplete arguments', 400);
                 }
-                if (!permissions(req.user.role, 'data.user', 'update', {data: {id: req.params.id}, user: req.user})){
+                if (!permissions.check(req.user.role, 'data.user', 'update', {data: {id: req.params.id}, user: req.user})){
                     return handleError(req, res, 'You don\'t have sufficient permissions to perform this action', 401);
                 }
                 //Don't allow to update roles
@@ -145,7 +145,7 @@ module.exports = () => {
         },
         'delete': {
             '/api/user/:id': (req, res) => {
-                if (!permissions(req.user.role, 'data.user', 'delete', {data: {id: req.params.id}, user: req.user})){
+                if (!permissions.check(req.user.role, 'data.user', 'delete', {data: {id: req.params.id}, user: req.user})){
                     return handleError(req, res, 'You don\'t have sufficient permissions to perform this action', 401);
                 }
                 performApiCall({req, res, apiFunc: api.user.delete, args: {id: req.params.id}});
