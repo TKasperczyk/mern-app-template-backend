@@ -8,7 +8,7 @@ const passport = require('passport');
 const router = require('express').Router();
 const h = require('../helpers');
 const acl = require('../acl');
-const permissions = require('../permissions');
+const permissions = require('../permissions').check;
 const logger = require('../logger').appLogger;
 const api = require('../api');
 const loginMiddleware = require('./middleware/login');
@@ -109,6 +109,7 @@ const route = (routes) => {
 };
 
 module.exports = () => {
+    permissions.init();
     /**
         An ordered list of routes that are secured by JWT auth and the access list module
     **/

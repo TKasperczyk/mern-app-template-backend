@@ -29,13 +29,10 @@ const logger = require('../logger').appLogger;
 /**
     Loads the permissions.json file into the global `permissions` variable
 **/
-//These could be const, but will be changed in tests
-let permissions = null;
-let permissionsPath = path.resolve(__dirname, '../../config/permissions.json');
-const loadPermissionsJson = () => {
+const getPermissionsJson = (permissionsPath) => {
     if (fs.existsSync(permissionsPath)){
         try{
-            permissions = JSON.parse(fs.readFileSync(permissionsPath, 'utf8'));
+            return JSON.parse(fs.readFileSync(permissionsPath, 'utf8'));
         } catch(error){
             throw(`Error while parsing the permissions.json file: ${h.optionalStringify(error)}`);
         }
@@ -48,12 +45,12 @@ const loadPermissionsJson = () => {
     Validates the structure of permissions.json and permissionFunctions.js.
     Throws an error if there's something wrong with the structure
 **/
-const validatePermissions = () => {
+const validatePermissions = (permissionsJson, permissionFunctions) => {
     //Some models have dots in their names, so we can't use the default dot
     const picker = new dotObj('->');
     try{
-        for (let roleName in permissions){
-            const rolePermissions = permissions[roleName];
+        for (let roleName in permissionsJson){
+            const rolePermissions = permissionsJson[roleName];
             if (typeof rolePermissions !== 'object'){
                 throw(`permissions.${roleName} isn't an object`);
             }
@@ -93,33 +90,43 @@ const validatePermissions = () => {
     }
 };
 
-loadPermissionsJson();
-validatePermissions();
-
-module.exports = (roleName, modelName, actionName, {data = null, user = null} = {}) => {
-    const dotter = new dotObj('->');
-    const modelPermissions = dotter.pick(`${roleName}->${modelName}`, permissions);
-    //Check if there are any permissions defined for the given role and model
-    if (!modelPermissions){
-        logger.error(`There's no permissions defined for role: ${roleName}, model: ${modelName}`);
-        return false;
+module.exports = {
+    check: (roleName, modelName, actionName, {data = null, user = null} = {}) => {
+        const dotter = new dotObj('->');
+        const modelPermissions = dotter.pick(`${roleName}->${modelName}`, module.exports.__private.permissionsJson);
+        //Check if there are any permissions defined for the given role and model
+        if (!modelPermissions){
+            logger.error(`There's no permissions defined for role: ${roleName}, model: ${modelName}`);
+            return false;
+        }
+        //Check if there are wildcard permissions for the given role and model
+        if (modelPermissions === '*'){
+            return true;
+        }
+        //If there are no wildcard permissions, check the modelPermissions' actions
+        const actionPermission = dotter.pick(`${roleName}->${modelName}->${actionName}`, module.exports.__private.permissionsJson);
+        //Check if there are any permissions for the given action
+        if (typeof actionPermission !== 'string' && typeof actionPermission !== 'boolean'){
+            logger.error(`There's no permission defined for role: ${roleName}, model: ${modelName}, action: ${actionName}`);
+            return false;
+        }
+        //If there's a custom permission function defined, return its result
+        if (actionPermission === 'function'){
+            return module.exports.__private.permissionFunctions[roleName][modelName][actionName](data, user);
+        } else {
+            //Otherwise return the given permission - it must be boolean
+            return actionPermission;
+        }
+    },
+    init: () => {
+        module.exports.__private.permissionsJson = getPermissionsJson(module.exports.__private.permissionsPath);
+        validatePermissions(module.exports.__private.permissionsJson, module.exports.__private.permissionFunctions);
+    },
+    __private: {
+        permissionsPath: path.resolve(__dirname, '../../config/permissions.json'),
+        permissionsJson: null,
+        permissionFunctions,
+        validatePermissions,
+        getPermissionsJson
     }
-    //Check if there are wildcard permissions for the given role and model
-    if (modelPermissions === '*'){
-        return true;
-    }
-    //If there are no wildcard permissions, check the modelPermissions' actions
-    const actionPermission = dotter.pick(`${roleName}->${modelName}->${actionName}`, permissions);
-    //Check if there are any permissions for the given action
-    if (typeof actionPermission !== 'string' && typeof actionPermission !== 'boolean'){
-        logger.error(`There's no permission defined for role: ${roleName}, model: ${modelName}, action: ${actionName}`);
-        return false;
-    }
-    //If there's a custom permission function defined, return its result
-    if (actionPermission === 'function'){
-        return permissionFunctions[roleName][modelName][actionName](data, user);
-    } else {
-        //Otherwise return the given permission - it must be boolean
-        return actionPermission;
-    }
-};
+}

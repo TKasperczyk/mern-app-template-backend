@@ -1,12 +1,11 @@
-const rewire = require('rewire');
 const testH = require('./helpers');
-const api = rewire('../app/api');
+const api = require('../app/api');
 
 describe('api', () => {
     describe('generics', () => {
         const mockUser = testH.userMocks.basic();
         let userIdMock; //Will be set in the first generics add test
-        const generics = api.__get__('generics');
+        const generics = api.__private.generics;
 
         //Remove the mock user before and after running the tests
         beforeAll(() => {

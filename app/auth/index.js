@@ -112,15 +112,24 @@ module.exports = (io) => {
         session: false
     }, registerProcessor));
 
-    //Secure socket.io with JWT auth
-    io.use(passportJwtSocketIo.authorize({
-        jwtFromRequest: jwtExtrator.fromUrlQueryParameter('token'),
-        secretOrKey: config.jwtKey
-    }, (jwtPayload, done) => {
-        jwtAuthProcessor({
-            connection: {
-                remoteAddress: 'websocket'
-            }
-        }, jwtPayload, done);
-    }));
+    if (io){
+        //Secure socket.io with JWT auth
+        io.use(passportJwtSocketIo.authorize({
+            jwtFromRequest: jwtExtrator.fromUrlQueryParameter('token'),
+            secretOrKey: config.jwtKey
+        }, (jwtPayload, done) => {
+            jwtAuthProcessor({
+                connection: {
+                    remoteAddress: 'websocket'
+                }
+            }, jwtPayload, done);
+        }));
+    }
+    return {
+        __private: {
+            registerProcessor,
+            localAuthProcessor,
+            jwtAuthProcessor
+        }
+    };
 };

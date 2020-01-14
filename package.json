@@ -8,7 +8,7 @@
     "start": "node cluster.js",
     "dev": "nodemon server.js",
     "coveralls": "jest --forceExit --runInBand --coverage --coverageReporters=text-lcov | ./node_modules/coveralls/bin/coveralls.js",
-    "test": "jest --forceExit --runInBand"
+    "test": "jest --forceExit --runInBand --coverage"
   },
   "repository": {
     "type": "git",
@@ -56,7 +56,6 @@
     "coveralls": "^3.0.9",
     "jest": "^24.9.0",
     "nodemon": "^2.0.2",
-    "rewire": "^4.0.1",
     "supertest": "^4.0.2"
   }
 }

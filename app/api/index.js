@@ -137,6 +137,9 @@ const generics = {
 **/
 
 module.exports = {
+    __private: {
+        generics
+    },
     user: {
         add: async ({user, logging = true, callId = null}) => {
             return await generics.add({
@@ -166,7 +169,7 @@ module.exports = {
                 callId
             });
         },
-        get: async ({id, logging = true, callId = null} = {}) => {
+        get: async ({id, logging = true, callId = null}) => {
             return await generics.get({
                 id,
                 modelName: 'data.user',
