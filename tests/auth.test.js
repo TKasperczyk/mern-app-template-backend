@@ -18,12 +18,14 @@ describe('auth', () => {
     const localAuthProcessor = auth.__private.localAuthProcessor;
     const jwtAuthProcessor = auth.__private.jwtAuthProcessor;
     
-    beforeAll(() => {
-        return testH.fn.cleanMockUsers();
+    beforeAll(async () => {
+        await testH.fn.cleanMockUsers();
     });
-    afterAll(() => {
-        return testH.fn.cleanMockUsers();
+    afterAll(async () => {
+        await testH.fn.cleanMockUsers();
+        db.mongoose.connection.close();
     });
+    
     describe('registerProcessor', () => {
         it('should allow new users to register without exposing their password in the result', (done) => {
             registerProcessor(reqMock, userMock.login, userMock.password, (error, user) => {
@@ -62,7 +64,7 @@ describe('auth', () => {
     });
     describe('localAuthProcessor', () => {
         it('should authenticate users with correct credentials without exposing their password in the result', (done) => {
-           localAuthProcessor(reqMock, userMock.login, userMock.password, (error, user) => {
+            localAuthProcessor(reqMock, userMock.login, userMock.password, (error, user) => {
                 expect(error).toBe(null);
                 expect(user).toHaveProperty('login');
                 expect(user).not.toHaveProperty('password');

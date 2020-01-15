@@ -19,6 +19,9 @@ module.exports = (io, app) => {
         io.on('connect_error', (error) => {
             logger.error('An error occured while connecting to a socket', {identifier: 'socket', meta: error});
         });
+        io.on('connection', (socket) => {
+            logger.debug('A new connection to /', {identifier: 'socket /'});
+        });
         io.of('/test').on('connection', (socket) => {
             logger.debug('A new connection to /test', {identifier: 'socket /test'});
             socket.on('testPing', () => {

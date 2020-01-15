@@ -1,18 +1,23 @@
 const testH = require('./helpers');
 const api = require('../app/api');
+const db = require('../app/db').mongo;
 
 describe('api', () => {
+    afterAll(async () => {
+        db.mongoose.connection.close();
+    });
+        
     describe('generics', () => {
         const mockUser = testH.userMocks.basic();
         let userIdMock; //Will be set in the first generics add test
         const generics = api.__private.generics;
 
         //Remove the mock user before and after running the tests
-        beforeAll(() => {
-            return testH.fn.cleanMockUsers();
+        beforeAll(async () => {
+            await testH.fn.cleanMockUsers();
         });
-        afterAll(() => {
-            return testH.fn.cleanMockUsers();
+        afterAll(async () => {
+            await testH.fn.cleanMockUsers();
         });
     
         describe('add', () => {

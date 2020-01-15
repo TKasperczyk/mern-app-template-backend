@@ -28,12 +28,18 @@ const mockRoom3 = 'testRoom3';
 describe('roomManager', () => {
     const rm = new RoomManager(dbIndex);
     let spySelect, spyFlushdb;
+    
     beforeAll(async () => {
         spySelect = jest.spyOn(rm._redisPromisified, 'select');
         spyFlushdb = jest.spyOn(rm._redisPromisified, 'flushdb');
         await rClientPromisified.select(dbIndex);
         return rm.init();
     });
+    afterAll(async () => {
+        await redis.quit();
+        await rm.destroy();
+    });
+
     describe('init', () => {
         it('should connect to Redis', () => {
             expect(rm._client.connected).toBe(true);
@@ -86,17 +92,17 @@ describe('roomManager', () => {
         expect(await rm.roomExists(mockNamespace, mockRoom2)).toEqual(false);
     });
     it('deactivateRoom should set the active flag to false', async () => {
-       await rm.deactivateRoom(mockNamespace, mockRoom1);
-       const room = await rm.getRoom(mockNamespace, mockRoom1);
-       expect(room).toBeTruthy();
-       expect(room.active).toBe(false);
+        await rm.deactivateRoom(mockNamespace, mockRoom1);
+        const room = await rm.getRoom(mockNamespace, mockRoom1);
+        expect(room).toBeTruthy();
+        expect(room.active).toBe(false);
     });
     it('deactivateRoom create a new room when it doesn\'t exist', async () => {
         await rm.deactivateRoom(mockNamespace, mockRoom3);
         const room3 = await rm.getRoom(mockNamespace, mockRoom3);
         expect(room3).toBeTruthy();
         expect(room3.active).toBe(false);
-     });
+    });
     it('activateRoom should set the active flag to true', async () => {
         await rm.activateRoom(mockNamespace, mockRoom1);
         const room = await rm.getRoom(mockNamespace, mockRoom1);
@@ -115,19 +121,19 @@ describe('roomManager', () => {
         expect(room).toBeTruthy();
         expect(room.clients.length).toBe(1);
         expect(room.clients[0]).toBe('testClientId');
-     });
-     it('removeClientFromRoom should delete a client from the given room', async () => {
+    });
+    it('removeClientFromRoom should delete a client from the given room', async () => {
         await rm.removeClientFromRoom(mockNamespace, mockRoom1, 'testClientId');
         const room = await rm.getRoom(mockNamespace, mockRoom1);
         expect(room).toBeTruthy();
         expect(room.clients.length).toBe(0);
-     });
-     it('removeClientFromRoom should return false if the room doesn\'t exist', async () => {
+    });
+    it('removeClientFromRoom should return false if the room doesn\'t exist', async () => {
         const notExistingRoomMock = 'notExistingRoomMock';
         const result = await rm.removeClientFromRoom(mockNamespace, notExistingRoomMock, 'testClientId');
         expect(result).toBe(false);
-     });
-     it('removeClientFromNamespace should delete a client from the given namespace', async () => {
+    });
+    it('removeClientFromNamespace should delete a client from the given namespace', async () => {
         await rm.addClient(mockNamespace, mockRoom1, 'testClientId');
         await rm.addClient(mockNamespace, mockRoom2, 'testClientId');
         let room1 = await rm.getRoom(mockNamespace, mockRoom1);
@@ -144,13 +150,13 @@ describe('roomManager', () => {
         expect(room2).toBeTruthy();
         expect(room1.clients.length).toBe(0);
         expect(room2.clients.length).toBe(0);
-     });
-     it('removeClientFromNamespace should return false if the given namespace doesn\'t exist', async () => {
+    });
+    it('removeClientFromNamespace should return false if the given namespace doesn\'t exist', async () => {
         const notExistingNamespaceMock = 'notExistingNamespace';
         const result = await rm.removeClientFromNamespace(notExistingNamespaceMock, 'testClientId');
         expect(result).toBe(false);
-     });
-     it('removeClientFromNamespace should not delete other clients from the given namespace', async () => {
+    });
+    it('removeClientFromNamespace should not delete other clients from the given namespace', async () => {
         await rm.addClient(mockNamespace, mockRoom1, 'testClientId-1');
         await rm.addClient(mockNamespace, mockRoom2, 'testClientId');
 
@@ -159,8 +165,8 @@ describe('roomManager', () => {
         let room2 = await rm.getRoom(mockNamespace, mockRoom2);
         expect(room1.clients.length).toBe(0);
         expect(room2.clients.length).toBe(1);
-     });
-     it('getRooms should return all of the created rooms', async () => {
+    });
+    it('getRooms should return all of the created rooms', async () => {
         const rooms = await rm.getRooms(mockNamespace);
         expect(rooms).toBeTruthy();
         expect(rooms).toHaveProperty(mockRoom1);

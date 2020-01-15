@@ -1,13 +1,12 @@
 'use strict';
 
-module.exports = (workerId) => {
+module.exports = (workerId, callback) => {
     process.env.id = workerId;
 
     const express = require('express');
     const passport = require('passport');
     const morgan = require('morgan');
     const helmet = require('helmet');
-    const path = require('path');
     const backend = require('./app');
     const app = express();
 
@@ -25,13 +24,18 @@ module.exports = (workerId) => {
 
     //If the first worker should run on a separate port: backend.helpers.isMasterWorker() ? backend.config.server.mainPort : backend.config.server.clusterPort;
     const port = backend.config.server.port;
-    backend.ioServer(app).listen(port, () => {
+    const bundle = backend.getServerBundle(app);
+    bundle.httpServer.listen(port, () => {
         backend.logger.appLogger.info(`Running on TCP ${port}`, {identifier: 'server'});
-        if (backend.config.openAuth === true){
-            backend.logger.appLogger.warn('AUTHENTICATION IS DISABLED!!! Check the openAuth option in ./config/config.json', {identifier: 'server'});
+        if (typeof callback === 'function'){
+            callback();
         }
     });
-    return app;
+    return {
+        app,
+        backend,
+        bundle
+    };
 };
 
 //We're able to start only one instance

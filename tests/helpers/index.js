@@ -33,7 +33,7 @@ module.exports = {
         cleanMockUsers: async () => {
             await db.models['data.user'].deleteMany({login: module.exports.userMocks.basic().login});
             await db.models['data.user'].deleteMany({login: module.exports.userMocks.alt().login});
-            return await db.models['data.user'].deleteMany({login: module.exports.userMocks.admin().login});
+            await db.models['data.user'].deleteMany({login: module.exports.userMocks.admin().login});
         },
     }
 };

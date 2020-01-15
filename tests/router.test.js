@@ -1,23 +1,23 @@
 const supertest = require('supertest');
 const jwt = require('jsonwebtoken');
-const workerId = 1;
 const testH = require('./helpers');
 const db = require('../app/db').mongo.models;
 const h = require('../app/helpers');
-const app = require('../server.js')(workerId);
+const server = require('../server.js');
 
 describe('router', () => {
+    let runningServer;
+    let app;
     //Will be filled in the /api/signup and /api/login tests
     let mockUser1Token = null;
     let mockUser1Payload = null;
     let mockUserAdminToken = null;
-    let mockUserAdminPayload = null;
     const mockUser1 = testH.userMocks.basic();
     const mockUser2 = testH.userMocks.alt();
     const mockUserAdmin = testH.userMocks.admin();
 
     //Remove mock users before and after running the tests
-    beforeAll(async () => {
+    beforeAll(async (done) => {
         await testH.fn.cleanMockUsers();
         //Add the admin user to the database
         const mockUserAdminDb = testH.userMocks.admin();
@@ -25,9 +25,18 @@ describe('router', () => {
         mockUserAdminDb.password = h.generateHash(mockUserAdminDb.password);
         const newAdmin = new db['data.user'](mockUserAdminDb);
         await newAdmin.save();
+        //Run the io server
+        const workerId = 1;
+        runningServer = server(workerId, () => {
+            app = runningServer.app;
+            done();
+        });
     });
-    afterAll(() => {
-        //return testH.fn.cleanMockUsers();
+    afterAll(async () => {
+        await testH.fn.cleanMockUsers();
+        //Close the connections
+        runningServer.bundle.ioServer.close();
+        db.mongoose.connection.close();
     });
     
     describe('/api/signup', () => {
@@ -35,7 +44,7 @@ describe('router', () => {
             let res = await supertest(app)
                 .post('/api/signup')
                 .send({login: mockUser1.login, password: mockUser1.password})
-                .expect(200)
+                .expect(200);
             expect(res.body).toHaveProperty('data');
             mockUser1Token = res.body.data;
         });

@@ -14,9 +14,9 @@ if (h.isMasterWorker()){
     require('./scheduler')();
 }
 
-const ioServer = (app) => {
-    const server = require('http').Server(app);
-    const io = require('socket.io')(server);
+const getServerBundle = (app) => {
+    const httpServer = require('http').Server(app);
+    const io = require('socket.io')(httpServer);
     //Register all authentication strategies
     require('./auth')(io);
     //We're using only websockets
@@ -34,7 +34,14 @@ const ioServer = (app) => {
         subClient
     }));
     require('./socket')(io, app);
-    return server;
+    return {
+        httpServer,
+        ioServer: io,
+        redis: {
+            pubClient,
+            subClient
+        }
+    };
 };
 
 module.exports = {
@@ -42,5 +49,5 @@ module.exports = {
     logger: require('./logger'),
     helpers: require('./helpers'),
     config,
-    ioServer,
+    getServerBundle,
 };

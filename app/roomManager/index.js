@@ -67,7 +67,7 @@ class RoomManager {
     /**
         Selects a database based on the constructor's dbId argument and flushes it
     **/
-    async init() {
+    async init(){
         try{
             await this._redisPromisified.select(this._dbId);
             await this._redisPromisified.flushdb();
@@ -75,6 +75,9 @@ class RoomManager {
             logger.error(`Failed to initialize the room manager ${error}`, {identifier: 'roomManager', meta: {error}});
             return false;
         }
+    }
+    async destroy(){
+        return await this._client.quit();
     }
     /**
         Returns an object containing all the stored rooms (its keys represent room names) in the given namespace

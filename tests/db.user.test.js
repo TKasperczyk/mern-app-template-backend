@@ -6,12 +6,14 @@ describe('db', () => {
     let newUserModel;
     let retrievedUser;
 
-    beforeAll(() => {
-        return testH.fn.cleanMockUsers();
+    beforeAll(async () => {
+        await testH.fn.cleanMockUsers();
     });
-    afterAll(() => {
-        //return testH.fn.cleanMockUsers();
+    afterAll(async () => {
+        await testH.fn.cleanMockUsers();
+        db.mongoose.connection.close();
     });
+    
     it('should expose the user model', () => {
         //Check if the user model is exposed
         expect(db.mongo).toHaveProperty('models');
@@ -47,7 +49,6 @@ describe('db', () => {
     });
     it('should hide the password when retrieving the created user', async () => {
         await expect((async () => {
-            console.log(newUserModel._id.toString());
             retrievedUser = await db.mongo.models['data.user'].find({login: newUserModel.login});
         })()).resolves.not.toThrow();
         expect(retrievedUser).toBeTruthy();

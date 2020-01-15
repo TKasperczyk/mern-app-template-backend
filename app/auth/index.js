@@ -13,6 +13,8 @@ const localStrategy = require('passport-local');
 const passportJwtSocketIo = require('passport-jwt.socketio');
 const jwtStrategy = require('passport-jwt').Strategy;
 const jwtExtrator = require('passport-jwt').ExtractJwt;
+const jwt = require('jsonwebtoken');
+const url = require('url');
 const config = require('../config');
 const h = require('../helpers');
 const db = require('../db').mongo;
@@ -113,6 +115,28 @@ module.exports = (io) => {
     }, registerProcessor));
 
     if (io){
+        //Check if the request URL contains an auth token (JWT)
+        io.use((socket, next) => {
+            logger.silly(`New socket.io connection request incoming`, {identifier: 'auth socket'});
+            let parsedReqUrl;
+            try{
+                parsedReqUrl = url.parse(socket.request.url, true);
+            } catch (error){
+                socket.conn.close();
+                logger.error(`Error while parsing a socket request URL: ${h.optionalStringify(error)}`, {identifier: 'auth socket'});
+            }
+            if (!parsedReqUrl.query.token){
+                socket.conn.close();
+                logger.warn('The provided socket URL doesn\'t contain an auth token', {identifier: 'auth socket', meta: {query: parsedReqUrl.query}});
+            }
+            try{
+                const decoded = jwt.decode(parsedReqUrl.query.token);
+            } catch (error){
+                socket.conn.close();
+                logger.error(`Error while parsing a socket request auth token: ${h.optionalStringify(error)}`, {identifier: 'auth socket'});
+            }
+            next();
+        });
         //Secure socket.io with JWT auth
         io.use(passportJwtSocketIo.authorize({
             jwtFromRequest: jwtExtrator.fromUrlQueryParameter('token'),
