@@ -51,15 +51,11 @@ describe('helpers isValidPassword', () => {
     const cleartextPassword = userMock.password;
     userMock.password = hash;
 
-    it('should return true if config.openAuth is true and the password is wrong', () => {
-        config.openAuth = true;
-        expect(h.isValidPassword(userMock, 'wrongPassword')).toBe(true);
-    });
-    it('should return false if config.openAuth is false and the password is wrong', () => {
+    it('should return false if the password is wrong', () => {
         config.openAuth = false;
         expect(h.isValidPassword(userMock, 'wrongPassword')).toBe(false);
     });
-    it('should return true if config.openAuth is false and the password is correct', () => {
+    it('should return true the password is correct', () => {
         config.openAuth = false;
         expect(h.isValidPassword(userMock, cleartextPassword)).toBe(true);
     });
