@@ -45,4 +45,8 @@ module.exports = {
     connection,
     mongoose,
     models: require('./models')(mongoose),
+    __private: {
+        authOptions,
+        connectionOptions
+    }
 };

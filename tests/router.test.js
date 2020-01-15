@@ -215,6 +215,22 @@ describe('router', () => {
                 .send({data: {login: mockUser1.login}})
                 .expect(200);
         });
+        it('should hash the password when PATCHing the current user with a valid token', async () => {
+            const res = await supertest(app)
+                .patch(`/api/user/${mockUser1Payload._id}`)
+                .set('Authorization', `Bearer ${mockUser1Token}`)
+                .send({data: {login: mockUser1.login, password: mockUser1.password}})
+                .expect(200);
+            expect(res.body.status).toEqual(true);
+            expect(res.body.data).toHaveProperty('login');
+            expect(res.body.data.login).toEqual(mockUser1.login);
+            expect(res.body.data).not.toHaveProperty('password');
+            //Restore the original login
+            const user = await db['data.user'].findOne({login: mockUser1.login}).select('+password').lean();
+            expect(user).toHaveProperty('password');
+            expect(user.password.length > 0).toBeTruthy();
+            expect(h.isValidPassword(user, mockUser1.password)).toBe(true);
+        });
         it('should not allow to PATCH all the users with a valid token', async () => {
             const res = await supertest(app)
                 .patch(`/api/user`)

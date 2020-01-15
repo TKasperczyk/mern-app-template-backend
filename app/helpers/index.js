@@ -80,7 +80,7 @@ module.exports = {
 		Returns true if the provided password is correct. The first argument should be a user object from the database
 	**/
     isValidPassword: (user, password) => {
-        return config.openAuth === true || bCrypt.compareSync(password, user.password);
+        return bCrypt.compareSync(password, user.password);
     },
     /**
         Returns a stringied version of the argument only if it's an actual object with at least one key. Otherwise, returns the original argument
