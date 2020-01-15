@@ -47,13 +47,13 @@ const h = require('../helpers');
 class RoomManager {
     //Make sure you don't override an existing Redis database - use a number that's not already used by your Redis instance
     constructor(dbId) {
-        let authOptions = {};
+        this._redisAuthOptions = {};
         if (config.db.redis.auth){
-            authOptions = {
+            this._redisAuthOptions = {
                 auth_pass: config.db.redis.password,
             };
         }
-        this._client = redis(config.db.redis.port, config.db.redis.host, authOptions);
+        this._client = redis(config.db.redis.port, config.db.redis.host, this._redisAuthOptions);
         this._redisPromisified = {
             hget: promisify(this._client.hget).bind(this._client),
             hgetall: promisify(this._client.hgetall).bind(this._client),
@@ -71,6 +71,7 @@ class RoomManager {
         try{
             await this._redisPromisified.select(this._dbId);
             await this._redisPromisified.flushdb();
+            return true;
         } catch (error){
             logger.error(`Failed to initialize the room manager ${error}`, {identifier: 'roomManager', meta: {error}});
             return false;
@@ -195,7 +196,7 @@ class RoomManager {
         return true;
     }
     async _saveRoom(namespace, roomName, roomObj){
-        this._redisPromisified.hset(namespace, roomName, JSON.stringify(roomObj));
+        return await this._redisPromisified.hset(namespace, roomName, JSON.stringify(roomObj));
     }
 }
 

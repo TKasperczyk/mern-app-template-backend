@@ -145,7 +145,6 @@ describe('router', () => {
             expect(res.body).toHaveProperty('data');
             expect(res.body.status).toEqual(true);
             mockUserAdminToken = res.body.data;
-            mockUserAdminPayload = jwt.decode(mockUserAdminToken);
         });
     });
 
@@ -293,5 +292,12 @@ describe('router', () => {
             expect(res.body.status).toEqual(true);
             expect(res.body.error).toBeFalsy();
         });
+    });
+    it('should return 404 for non-existing routes', async () => {
+        const nonExistingRouteMock = '/nonExistingRoute';
+        await supertest(app)
+            .get(nonExistingRouteMock)
+            .set('Authorization', `Bearer ${mockUserAdminToken}`)
+            .expect(404);
     });
 });

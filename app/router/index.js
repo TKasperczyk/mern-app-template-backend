@@ -12,7 +12,6 @@ const permissions = require('../permissions');
 const logger = require('../logger').appLogger;
 const api = require('../api');
 const loginMiddleware = require('./middleware/login');
-const logoutMiddleware = require('./middleware/logout');
 const registerMiddleware = require('./middleware/register');
 const notFoundMiddleware = require('./middleware/notFound');
 
@@ -80,8 +79,6 @@ const performApiCall = ({req, res, apiFunc, args, successCallback, logging = tru
 const route = (routes) => {
     //Allow users to log in and receive a JWT token
     router.post('/api/login', loginMiddleware);
-    //Allow users to log out and destroy the session (the token will still be valid)
-    router.get('/api/logout', logoutMiddleware);
     //Allow users to register and receive a JWT token
     router.post('/api/signup', registerMiddleware);
     //Secure all routes with JWT authentication

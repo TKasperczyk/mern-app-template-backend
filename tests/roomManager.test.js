@@ -39,8 +39,24 @@ describe('roomManager', () => {
         await redis.quit();
         await rm.destroy();
     });
+    afterEach(() => {
+        jest.restoreAllMocks();
+    });
 
-    describe('init', () => {
+    it('constructor should add auth options to redis client when it\'s defined in the config', async () => {
+        config.db.redis.auth = true;
+        const authRm = new RoomManager(dbIndex);
+        expect(authRm._redisAuthOptions).toHaveProperty('auth_pass');
+        expect(authRm._redisAuthOptions.auth_pass).toEqual(config.db.redis.password);
+        await authRm.destroy();
+    });
+    it('constructor should not add auth options to redis client when it\'s not defined in the config', async () => {
+        config.db.redis.auth = false;
+        const noAuthRm = new RoomManager(dbIndex);
+        expect(noAuthRm._redisAuthOptions).not.toHaveProperty('auth_pass');
+        await noAuthRm.destroy();
+    });
+    describe('init (called in beforeAll)', () => {
         it('should connect to Redis', () => {
             expect(rm._client.connected).toBe(true);
         });
@@ -50,12 +66,35 @@ describe('roomManager', () => {
         it('should flush the database', () => {
             expect(spyFlushdb).toHaveBeenCalled();
         });
+        it('should return false if the db index is too high', async () => {
+            const wrongDbIdMock = 1234567;
+            const wrongDbIdRm = new RoomManager(wrongDbIdMock);
+            const result = await wrongDbIdRm.init();
+            expect(result).toBe(false);
+            await wrongDbIdRm.destroy();
+        });
     });
     it('getRooms should return null when there are none', async () => {
         expect(await rm.getRooms(mockNamespace)).toEqual(null);
     });
+    it('getRooms should return null when a room is malformed', async () => {
+        const testNamespaceMock = 'testNamespace';
+        const testRoomNameMock = 'testRoomName';
+        const wrongJsonMock = '{}}}!';
+        await rClientPromisified.hset(testNamespaceMock, testRoomNameMock, wrongJsonMock);
+        expect(await rm.getRooms(testNamespaceMock)).toEqual(null);
+        await rClientPromisified.flushdb();
+    });
     it('getRoom should return null when there are none', async () => {
         expect(await rm.getRoom(mockNamespace, mockRoom1)).toEqual(null);
+    });
+    it('getRoom should return null when a room is malformed', async () => {
+        const testNamespaceMock = 'testNamespace';
+        const testRoomNameMock = 'testRoomName';
+        const wrongJsonMock = '{}}}!';
+        await rClientPromisified.hset(testNamespaceMock, testRoomNameMock, wrongJsonMock);
+        expect(await rm.getRoom(testNamespaceMock, testRoomNameMock)).toEqual(null);
+        await rClientPromisified.flushdb();
     });
     it('roomEmpty should return true when there are no rooms', async () => {
         expect(await rm.roomEmpty(mockNamespace, mockRoom1)).toEqual(true);
@@ -171,5 +210,10 @@ describe('roomManager', () => {
         expect(rooms).toBeTruthy();
         expect(rooms).toHaveProperty(mockRoom1);
         expect(rooms).toHaveProperty(mockRoom2);
+    });
+    it('destroy should call the redis client\'s quit function', () => {
+        jest.spyOn(rm._client, 'quit');
+        rm.destroy();
+        expect(rm._client.quit).toHaveBeenCalled();
     });
 });

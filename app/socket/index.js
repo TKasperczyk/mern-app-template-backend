@@ -22,12 +22,5 @@ module.exports = (io, app) => {
         io.on('connection', (socket) => {
             logger.debug('A new connection to /', {identifier: 'socket /'});
         });
-        io.of('/test').on('connection', (socket) => {
-            logger.debug('A new connection to /test', {identifier: 'socket /test'});
-            socket.on('testPing', () => {
-                logger.debug('Got ping, sending pong', {identifier: 'socket /test'});
-                socket.emit('testPong', new Date());
-            });
-        });
     });
 };
