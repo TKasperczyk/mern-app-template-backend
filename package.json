@@ -10,7 +10,9 @@
     "send-coveralls": "cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
     "test-with-coveralls": "jest --forceExit --runInBand --coverage --coverageReporters=text-lcov | coveralls",
     "test-with-coverage": "jest --forceExit --runInBand --coverage",
-    "test": "jest --forceExit --runInBand"
+    "test": "jest --forceExit --runInBand",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
   },
   "repository": {
     "type": "git",
@@ -52,12 +54,14 @@
     "socket.io": "^2.3.0",
     "socket.io-redis": "^5.2.0",
     "winston": "^3.2.1",
-    "winston-daily-rotate-file": "^4.3.0"
+    "winston-daily-rotate-file": "^4.3.0",
+    "snyk": "^1.278.1"
   },
   "devDependencies": {
     "coveralls": "^3.0.9",
     "jest": "^24.9.0",
     "nodemon": "^2.0.2",
     "supertest": "^4.0.2"
-  }
+  },
+  "snyk": true
 }
