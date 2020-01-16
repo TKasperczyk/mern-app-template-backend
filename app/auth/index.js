@@ -130,7 +130,7 @@ module.exports = (io) => {
                 logger.warn('The provided socket URL doesn\'t contain an auth token', {identifier: 'auth socket', meta: {query: parsedReqUrl.query}});
             }
             try{
-                const decoded = jwt.decode(parsedReqUrl.query.token);
+                jwt.decode(parsedReqUrl.query.token);
             } catch (error){
                 socket.conn.close();
                 logger.error(`Error while parsing a socket request auth token: ${h.optionalStringify(error)}`, {identifier: 'auth socket'});

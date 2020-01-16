@@ -5,13 +5,15 @@
     Can be used to send scheduled events, perform database cleanups, reload the configuration periodically etc.
 **/
 
-const schedule = require(`node-schedule`);
-const config = require(`../config`);
-const h = require(`../helpers`);
-const logger = require(`../logger`).appLogger;
+//Uncomment if you want to use this module
+/*
+const schedule = require('node-schedule');
+const config = require('../config');
+const h = require('../helpers');
+const logger = require('../logger').appLogger;
 
 const workers = {
-    /*example: {
+    example: {
         worker: async (nextExecutionDate) => {
             const callId = h.generateCallId();
             try{
@@ -25,8 +27,9 @@ const workers = {
             }
         },
         currentlyRunning: false
-    },*/
+    },
 };
+*/
 
 module.exports = () => {
     return {

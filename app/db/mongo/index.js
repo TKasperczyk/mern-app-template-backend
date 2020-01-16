@@ -28,8 +28,8 @@ if (config.db.auth){
         auth: {
             authdb: config.db.mongo.authDb
         },
-    }
-};
+    };
+}
 
 const mongoOptions = Object.assign({}, connectionOptions, authOptions);
 mongoose.connect(config.db.mongo.url, mongoOptions).catch((error) => {
