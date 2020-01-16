@@ -2,7 +2,7 @@ language: node_js
 node_js:
   - '13'
 script:
-  - npm run coveralls
+  - npm test roomManager
 before_install:
   - mv ./config/config.sample.json ./config/config.json
 install: npm install

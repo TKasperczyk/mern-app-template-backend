@@ -8,6 +8,7 @@ module.exports = {
         '!data/keyMap.js',
         '!/node_modules/',
         '!jest.config.js',
-        '!jest.setup.js'
-    ]
+        '!jest.setup.js',
+        '!cluster.js' //We can't really test the cluster
+    ],
 };
