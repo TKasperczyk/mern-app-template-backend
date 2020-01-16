@@ -46,7 +46,7 @@ describe('roomManager', () => {
     it('constructor should add auth options to redis client when it\'s defined in the config', async () => {
         config.db.redis.auth = true;
         const authRm = new RoomManager(dbIndex);
-        expect(authRm._redisAuthOptions).not.toHaveProperty('auth_pass');
+        expect(authRm._redisAuthOptions).toHaveProperty('auth_pass');
         expect(authRm._redisAuthOptions.auth_pass).toEqual(config.db.redis.password);
         await authRm.destroy();
     });
