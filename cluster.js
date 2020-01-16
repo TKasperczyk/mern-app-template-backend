@@ -17,3 +17,5 @@ if (cluster.isMaster){
 } else if (cluster.isWorker){
     require('./server.js')(cluster.worker.id);
 }
+
+module.exports = cluster;
