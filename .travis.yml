@@ -2,9 +2,11 @@ language: node_js
 node_js:
   - '13'
 script:
-  - npm test roomManager
+  - npm run test-with-coverage 
 before_install:
   - mv ./config/config.sample.json ./config/config.json
+after_success:
+  - npm run send-coveralls
 install: npm install
 services:
   - mongodb
