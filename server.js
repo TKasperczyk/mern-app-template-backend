@@ -20,7 +20,7 @@ module.exports = (workerId, callback) => {
 
     /* Backend middleware */
     app.use(passport.initialize());
-    app.use('/', backend.router);
+    app.use('/', backend.router.instance());
 
     //If the first worker should run on a separate port: backend.helpers.isMasterWorker() ? backend.config.server.mainPort : backend.config.server.clusterPort;
     const port = backend.config.server.port;

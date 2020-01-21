@@ -22,7 +22,7 @@ describe('socket', () => {
     beforeAll(async (done) => {
         jest.setTimeout(10000);
 
-        await testH.fn.cleanMockUsers();
+        await testH.fn.cleanMockUsers(db);
         //Add the admin user to the database because we need an auth token to perform the tests
         const mockUserAdmin = testH.userMocks.admin();
         delete mockUserAdmin._id;
@@ -37,7 +37,7 @@ describe('socket', () => {
         });
     });
     afterAll(async () => {
-        await testH.fn.cleanMockUsers();
+        await testH.fn.cleanMockUsers(db);
         //Close the connections
         runningServer.bundle.ioServer.close();
         db.mongoose.connection.close();

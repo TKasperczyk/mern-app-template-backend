@@ -21,13 +21,13 @@ const loadConfig = () => {
     if (fs.existsSync(configPath)){
         try{
             configJson = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+            Object.assign(module.exports, configJson);
         } catch(error){
-            throw(`Error while parsing the config.json file: ${h.optionalStringify(error)}`);
+            throw new Error(`Error while parsing the config.json file: ${h.optionalStringify(error)}`);
         }
     } else {
-        throw('Error: /config/config.json not found');
+        throw new Error('Error: /config/config.json not found');
     }
-    Object.assign(module.exports, configJson);
 };
 
 loadConfig();

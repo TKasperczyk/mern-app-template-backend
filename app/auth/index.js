@@ -90,31 +90,35 @@ const registerProcessor = async (req, login, password, done) => {
     }
 };
 
-module.exports = (io) => {
-    passport.use('login', new localStrategy({
-        passReqToCallback: true,
-        usernameField: 'login',
-        passwordField: 'password',
-        session: false
-    }, localAuthProcessor));
-    passport.use('jwt', new jwtStrategy({
-        passReqToCallback: true,
-        usernameField: 'login',
-        passwordField: 'password',
-        jwtFromRequest: jwtExtrator.fromAuthHeaderAsBearerToken(),
-        secretOrKey: config.jwtKey,
-        jsonWebTokenOptions: {
-            maxAge: '1d'
+module.exports = {
+    registerStrategies: (io) => {
+        passport.use('login', new localStrategy({
+            passReqToCallback: true,
+            usernameField: 'login',
+            passwordField: 'password',
+            session: false
+        }, localAuthProcessor));
+        passport.use('jwt', new jwtStrategy({
+            passReqToCallback: true,
+            usernameField: 'login',
+            passwordField: 'password',
+            jwtFromRequest: jwtExtrator.fromAuthHeaderAsBearerToken(),
+            secretOrKey: config.jwtKey,
+            jsonWebTokenOptions: {
+                maxAge: '1d'
+            }
+        }, jwtAuthProcessor));
+        passport.use('register', new localStrategy({
+            passReqToCallback: true,
+            usernameField: 'login',
+            passwordField: 'password',
+            session: false
+        }, registerProcessor));
+        if (io){
+            module.exports.registerIo(io);
         }
-    }, jwtAuthProcessor));
-    passport.use('register', new localStrategy({
-        passReqToCallback: true,
-        usernameField: 'login',
-        passwordField: 'password',
-        session: false
-    }, registerProcessor));
-
-    if (io){
+    },
+    registerIo: (io) => {
         //Check if the request URL contains an auth token (JWT)
         io.use((socket, next) => {
             logger.silly(`New socket.io connection request incoming`, {identifier: 'auth socket'});
@@ -148,12 +152,10 @@ module.exports = (io) => {
                 }
             }, jwtPayload, done);
         }));
+    },
+    __private: {
+        registerProcessor,
+        localAuthProcessor,
+        jwtAuthProcessor
     }
-    return {
-        __private: {
-            registerProcessor,
-            localAuthProcessor,
-            jwtAuthProcessor
-        }
-    };
 };

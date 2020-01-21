@@ -1,7 +1,7 @@
 const supertest = require('supertest');
 const jwt = require('jsonwebtoken');
 const testH = require('./helpers');
-const db = require('../app/db').mongo.models;
+const db = require('../app/db').mongo;
 const h = require('../app/helpers');
 const server = require('../server.js');
 
@@ -18,12 +18,12 @@ describe('router', () => {
 
     //Remove mock users before and after running the tests
     beforeAll(async (done) => {
-        await testH.fn.cleanMockUsers();
+        await testH.fn.cleanMockUsers(db);
         //Add the admin user to the database
         const mockUserAdminDb = testH.userMocks.admin();
         delete mockUserAdminDb._id;
         mockUserAdminDb.password = h.generateHash(mockUserAdminDb.password);
-        const newAdmin = new db['data.user'](mockUserAdminDb);
+        const newAdmin = new db.models['data.user'](mockUserAdminDb);
         await newAdmin.save();
         //Run the io server
         const workerId = 1;
@@ -33,7 +33,7 @@ describe('router', () => {
         });
     });
     afterAll(async () => {
-        await testH.fn.cleanMockUsers();
+        await testH.fn.cleanMockUsers(db);
         //Close the connections
         runningServer.bundle.ioServer.close();
         db.mongoose.connection.close();
@@ -226,7 +226,7 @@ describe('router', () => {
             expect(res.body.data.login).toEqual(mockUser1.login);
             expect(res.body.data).not.toHaveProperty('password');
             //Restore the original login
-            const user = await db['data.user'].findOne({login: mockUser1.login}).select('+password').lean();
+            const user = await db.models['data.user'].findOne({login: mockUser1.login}).select('+password').lean();
             expect(user).toHaveProperty('password');
             expect(user.password.length > 0).toBeTruthy();
             expect(h.isValidPassword(user, mockUser1.password)).toBe(true);

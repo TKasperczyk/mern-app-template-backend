@@ -20,18 +20,21 @@ const connectionOptions = {
     useFindAndModify: false
 };
 
-let authOptions = {};
-if (config.db.auth){
-    authOptions = {
-        user: config.db.mongo.user,
-        pass: config.db.mongo.password,
-        auth: {
-            authdb: config.db.mongo.authDb
-        },
-    };
-}
+const generateAuthOptions = () => {
+    let authOptions = {};
+    if (config.db.mongo.auth){
+        authOptions = {
+            user: config.db.mongo.user,
+            pass: config.db.mongo.password,
+            auth: {
+                authdb: config.db.mongo.authDb
+            },
+        };
+    }
+    return authOptions;
+};
 
-const mongoOptions = Object.assign({}, connectionOptions, authOptions);
+const mongoOptions = Object.assign({}, connectionOptions, generateAuthOptions());
 mongoose.connect(config.db.mongo.url, mongoOptions).catch((error) => {
     logger.error(`Mongoose error: ${h.optionalStringify(error)}`, {identifier: 'db mongo'});
 });
@@ -46,7 +49,7 @@ module.exports = {
     mongoose,
     models: require('./models')(mongoose),
     __private: {
-        authOptions,
+        generateAuthOptions,
         connectionOptions
     }
 };

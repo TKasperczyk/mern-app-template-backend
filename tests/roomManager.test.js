@@ -36,7 +36,9 @@ describe('roomManager', () => {
         return rm.init();
     });
     afterAll(async () => {
-        await redis.quit();
+        if (redis.connected){
+            redis.end(true);
+        }
         await rm.destroy();
     });
     afterEach(() => {
@@ -212,8 +214,8 @@ describe('roomManager', () => {
         expect(rooms).toHaveProperty(mockRoom2);
     });
     it('destroy should call the redis client\'s quit function', () => {
-        jest.spyOn(rm._client, 'quit');
+        const rmClientEndSpy = jest.spyOn(rm._client, 'end');
         rm.destroy();
-        expect(rm._client.quit).toHaveBeenCalled();
+        expect(rmClientEndSpy).toHaveBeenCalled();
     });
 });

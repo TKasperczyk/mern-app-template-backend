@@ -1,8 +1,8 @@
 const jwt = require('jsonwebtoken');
 const testH = require('./helpers');
 const h = require('../app/helpers');
-const auth = require('../app/auth')();
-const db = require('../app/db').mongo.models;
+const auth = require('../app/auth');
+const db = require('../app/db').mongo;
 
 const reqMock = {
     connection: {
@@ -19,10 +19,11 @@ describe('auth', () => {
     const jwtAuthProcessor = auth.__private.jwtAuthProcessor;
     
     beforeAll(async () => {
-        await testH.fn.cleanMockUsers();
+        auth.registerStrategies();
+        await testH.fn.cleanMockUsers(db);
     });
     afterAll(async () => {
-        await testH.fn.cleanMockUsers();
+        await testH.fn.cleanMockUsers(db);
         db.mongoose.connection.close();
     });
     
@@ -52,12 +53,12 @@ describe('auth', () => {
             });
         });
         it('should deny users when there\'s a database problem', (done) => {
-            const backupModel = db['data.user'];
-            db['data.user'] = null;
+            const backupModel = db.models['data.user'];
+            db.models['data.user'] = null;
             registerProcessor(reqMock, userMock2.login, userMock2.password, (error, user) => {
                 expect(error).toBe('Unknown authentication error');
                 expect(user).toBeFalsy();
-                db['data.user'] = backupModel;
+                db.models['data.user'] = backupModel;
                 done();
             });
         });
@@ -83,12 +84,12 @@ describe('auth', () => {
             });
         });
         it('should deny users when there\'s a database problem', (done) => {
-            const backupModel = db['data.user'];
-            db['data.user'] = null;
+            const backupModel = db.models['data.user'];
+            db.models['data.user'] = null;
             localAuthProcessor(reqMock, userMock.login, userMock.password, (error, user) => {
                 expect(error).toBe('Unknown authentication error');
                 expect(user).toBeFalsy();
-                db['data.user'] = backupModel;
+                db.models['data.user'] = backupModel;
                 done();
             });
         });
@@ -129,12 +130,12 @@ describe('auth', () => {
             });
         });
         it('should deny users when there\'s a database problem', (done) => {
-            const backupModel = db['data.user'];
-            db['data.user'] = null;
+            const backupModel = db.models['data.user'];
+            db.models['data.user'] = null;
             jwtAuthProcessor(reqMock, jwtPayload, (error, user) => {
                 expect(error).toBe('Unknown authentication error');
                 expect(user).toBeFalsy();
-                db['data.user'] = backupModel;
+                db.models['data.user'] = backupModel;
                 done();
             });
         });

@@ -57,7 +57,7 @@ describe('permissions', () => {
                     'notExistingModel': ''
                 }
             };
-            expect(validatePermissions.bind(null, wrongPermissionsMock, permissionFunctions)).toThrow('There\'s no model called notExistingModel defined in mongoose');
+            expect(validatePermissions.bind(null, wrongPermissionsMock, permissionFunctions)).toThrow('no model called notExistingModel defined in mongoose');
         });
         it('should throw if the permissions model contains a string that\'s not equal to "*"', () => {
             const wrongPermissionsMock = {
@@ -65,7 +65,7 @@ describe('permissions', () => {
                     'data.user': 'wrongStringValue'
                 }
             };
-            expect(validatePermissions.bind(null, wrongPermissionsMock, permissionFunctions)).toThrow('Unknown value for permissions.[admin][data.user]. Supported values: "*", object');
+            expect(validatePermissions.bind(null, wrongPermissionsMock, permissionFunctions)).toThrow('nknown value for permissions.[admin][data.user]');
         });
         it('should throw if the permissions model contains an object with an unknown action', () => {
             const wrongPermissionsMock = {
@@ -75,7 +75,7 @@ describe('permissions', () => {
                     }
                 }
             };
-            expect(validatePermissions.bind(null, wrongPermissionsMock, permissionFunctions)).toThrow('Unknown action name for permissions[admin][data.user]: unknownActionName. Supported actions: add, get, update, delete');
+            expect(validatePermissions.bind(null, wrongPermissionsMock, permissionFunctions)).toThrow('nknown action name for permissions[admin][data.user]: unknownActionName');
         });
         it('should throw if the permissions action is a string that\'s not equal to "function"', () => {
             const wrongPermissionsMock = {
@@ -85,7 +85,7 @@ describe('permissions', () => {
                     }
                 }
             };
-            expect(validatePermissions.bind(null, wrongPermissionsMock, permissionFunctions)).toThrow('Unknown value for permissions[admin][data.user][add] Supported values: "function", boolean');
+            expect(validatePermissions.bind(null, wrongPermissionsMock, permissionFunctions)).toThrow('nknown value for permissions[admin][data.user][add]');
         });
         it('should throw if the permissions action is a function that doesn\'t exist in permissionFunctions', () => {
             const wrongPermissionsMock = {
@@ -95,7 +95,7 @@ describe('permissions', () => {
                     }
                 }
             };
-            expect(validatePermissions.bind(null, wrongPermissionsMock, permissionFunctions)).toThrow('Permission parsing error: There\'s no function defined for permissions[admin][data.user][add]. Go to /app/permissions/permissionFunctions.js and define it');
+            expect(validatePermissions.bind(null, wrongPermissionsMock, permissionFunctions)).toThrow('no function defined');
         });
         it('should throw if the permissions action is not a string or a boolean', () => {
             const wrongPermissionsMock = {
@@ -105,7 +105,7 @@ describe('permissions', () => {
                     }
                 }
             };
-            expect(validatePermissions.bind(null, wrongPermissionsMock, permissionFunctions)).toThrow('Permission parsing error: Unknown value type for permissions[admin][data.user][add]. Supported values: \"function\", boolean');
+            expect(validatePermissions.bind(null, wrongPermissionsMock, permissionFunctions)).toThrow('nknown value type');
         });
     });
     describe('check', () => {

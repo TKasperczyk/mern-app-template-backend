@@ -26,10 +26,10 @@ const generics = {
         logger.api(`Adding a new ${modelName}`, {logging, identifier: `api ${logPathPrefix}${modelName} add`, meta: {inputObj}, callId});
         try{
             if (inputObj === undefined || typeof inputObj !== 'object'){
-                throw('Wrong inputObj argument');
+                throw new Error('Wrong inputObj argument');
             }
             if (typeof modelName !== 'string' || mongoDb[modelName] === undefined){
-                throw('Wrong modelName argument');
+                throw new Error('Wrong modelName argument');
             }
             logger.api(`Creating a new ${modelName}`, {logging, identifier: `api ${logPathPrefix}${modelName} add`, callId});
             let newObj = new mongoDb[modelName](inputObj);
@@ -42,7 +42,7 @@ const generics = {
                 logger.api(`Successfully added a new ${modelName}`, {logging, identifier: `api ${logPathPrefix}${modelName} add`, meta: {savedObj}, callId});
                 return mongoDb[modelName].findOne(savedObj._id); //For autopopopulate to work
             } else {
-                throw(`Failed to add a new ${logPathPrefix}${modelName}: unknown error`);
+                throw new Error(`Failed to add a new ${logPathPrefix}${modelName}: unknown error`);
             }
         } catch (error){
             logger.error(`Failed to add a new ${modelName}: ${h.optionalStringify(error)}`, {identifier: `api ${logPathPrefix}${modelName} add`, meta: {inputObj}, callId});
@@ -58,14 +58,14 @@ const generics = {
         logger.api(`Deleting a ${modelName}`, {logging, identifier: `api ${logPathPrefix}${modelName} delete`, meta: {id}, callId});
         try{
             if (id === undefined || typeof id !== 'string' || !(/^[a-fA-F0-9]{24}$/).test(id)){
-                throw('Wrong id argument');
+                throw new Error('Wrong id argument');
             }
             const deletedObj = await mongoDb[modelName].findByIdAndRemove(id).exec();
             if (deletedObj){
                 logger.api(`Successfully deleted a ${modelName} with an id: ${id}`, {logging, identifier: `api ${logPathPrefix}${modelName} delete`, meta: {deletedObj}, callId});
                 return deletedObj;
             } else {
-                throw(`Failed to delete ${modelName} with id: ${id}`);
+                throw new Error(`Failed to delete ${modelName} with id: ${id}`);
             }
         } catch (error){
             logger.error(`Failed to delete an existing ${modelName}: ${h.optionalStringify(error)}`, {identifier: `api ${logPathPrefix}${modelName} delete`, meta: {id}, callId});
@@ -83,10 +83,10 @@ const generics = {
         logger.api(`Updating a ${modelName}`, {logging, identifier: `api ${logPathPrefix}${modelName} update`, meta: {id, inputObj}, callId});
         try{
             if (id === undefined || typeof id !== 'string' || !(/^[a-fA-F0-9]{24}$/).test(id)){
-                throw(`Wrong id argument: ${id === undefined ? `undefined` : id} ${typeof id} ${typeof id === `string` ? !(/^[a-fA-F0-9]{24}$/).test(id) : 'regex not applicable'}`);
+                throw new Error(`Wrong id argument: ${id === undefined ? `undefined` : id} ${typeof id} ${typeof id === `string` ? !(/^[a-fA-F0-9]{24}$/).test(id) : 'regex not applicable'}`);
             }
             if (inputObj === undefined || typeof inputObj !== 'object'){
-                throw(`Wrong inputObj argument`);
+                throw new Error(`Wrong inputObj argument`);
             }
             if (typeof modifierFunc === 'function'){
                 inputObj = modifierFunc(inputObj);
@@ -97,7 +97,7 @@ const generics = {
                 logger.api(`Successfully updated a ${modelName} with an id: ${id}`, {logging, identifier: `api ${logPathPrefix}${modelName} update`, meta: {updateResult}, callId});
                 return await mongoDb[modelName].findById(id);
             } else {
-                throw(`Failed to update ${modelName} with id: ${id}`);
+                throw new Error(`Failed to update ${modelName} with id: ${id}`);
             }
         } catch (error){
             logger.error(`Failed to update an existing ${modelName}: ${h.optionalStringify(error)}`, {identifier: `api ${logPathPrefix}${modelName} update`, meta: {id, inputObj}, callId});

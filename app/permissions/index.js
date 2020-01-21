@@ -22,8 +22,7 @@ const dotObj = require('dot-object');
 const path = require('path');
 const h = require('../helpers');
 const db = require('../db').mongo.models;
-//This will be overwritten in unit tests, therefore it can't be const
-let permissionFunctions = require('./permissionFunctions');
+const permissionFunctions = require('./permissionFunctions');
 const logger = require('../logger').appLogger;
 
 /**
@@ -34,10 +33,10 @@ const getPermissionsJson = (permissionsPath) => {
         try{
             return JSON.parse(fs.readFileSync(permissionsPath, 'utf8'));
         } catch(error){
-            throw(`Error while parsing the permissions.json file: ${h.optionalStringify(error)}`);
+            throw new Error(`Error while parsing the permissions.json file: ${h.optionalStringify(error)}`);
         }
     } else {
-        throw('Error: /config/permissions.json not found');
+        throw new Error('Error: /config/permissions.json not found');
     }
 };
 
@@ -52,16 +51,16 @@ const validatePermissions = (permissionsJson, permissionFunctions) => {
         for (let roleName in permissionsJson){
             const rolePermissions = permissionsJson[roleName];
             if (typeof rolePermissions !== 'object'){
-                throw(`permissions.${roleName} isn't an object`);
+                throw new Error(`permissions.${roleName} isn't an object`);
             }
             for (let modelName in rolePermissions){
                 const modelPermissions = rolePermissions[modelName];
                 if (!db[modelName]){
-                    throw(`There's no model called ${modelName} defined in mongoose`);
+                    throw new Error(`There's no model called ${modelName} defined in mongoose`);
                 }
                 if (typeof modelPermissions === 'string'){
                     if (modelPermissions !== '*'){
-                        throw(`Unknown value for permissions.[${roleName}][${modelName}]. Supported values: "*", object`);
+                        throw new Error(`Unknown value for permissions.[${roleName}][${modelName}]. Supported values: "*", object`);
                     } else {
                         continue;
                     }
@@ -69,24 +68,24 @@ const validatePermissions = (permissionsJson, permissionFunctions) => {
                 for (let actionName in modelPermissions){
                     const actionPermission = modelPermissions[actionName];
                     if (!['get', 'update', 'delete', 'add'].includes(actionName)){
-                        throw(`Unknown action name for permissions[${roleName}][${modelName}]: ${actionName}. Supported actions: add, get, update, delete`);
+                        throw new Error(`Unknown action name for permissions[${roleName}][${modelName}]: ${actionName}. Supported actions: add, get, update, delete`);
                     }
                     if (typeof actionPermission === 'string'){
                         if (actionPermission !== 'function'){
-                            throw(`Unknown value for permissions[${roleName}][${modelName}][${actionName}] Supported values: "function", boolean`);
+                            throw new Error(`Unknown value for permissions[${roleName}][${modelName}][${actionName}] Supported values: "function", boolean`);
                         } else {
                             if (typeof picker.pick(`${roleName}->${modelName}->${actionName}`, permissionFunctions) !== 'function'){
-                                throw (`There's no function defined for permissions[${roleName}][${modelName}][${actionName}]. Go to /app/permissions/permissionFunctions.js and define it`);
+                                throw new Error(`There's no function defined for permissions[${roleName}][${modelName}][${actionName}]. Go to /app/permissions/permissionFunctions.js and define it`);
                             }
                         }
                     } else if (typeof actionPermission !== 'boolean'){
-                        throw(`Unknown value type for permissions[${roleName}][${modelName}][${actionName}]. Supported values: "function", boolean`);
+                        throw new Error(`Unknown value type for permissions[${roleName}][${modelName}][${actionName}]. Supported values: "function", boolean`);
                     }
                 }
             }
         }
     } catch(error){
-        throw(`Permission parsing error: ${h.optionalStringify(error)}`);
+        throw new Error(`Permission parsing error: ${h.optionalStringify(error)}`);
     }
 };
 

@@ -8,9 +8,9 @@
     "start": "node cluster.js",
     "dev": "nodemon server.js",
     "send-coveralls": "cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
-    "test-with-coveralls": "jest --forceExit --runInBand --coverage --coverageReporters=text-lcov | coveralls",
-    "test-with-coverage": "jest --forceExit --runInBand --coverage",
-    "test": "jest --forceExit --runInBand",
+    "test-with-coveralls": "jest --forceExit --runInBand --bail --coverage --coverageReporters=text-lcov | coveralls",
+    "test-with-coverage": "jest --forceExit --runInBand --bail --coverage",
+    "test": "jest --forceExit --runInBand --bail ",
     "snyk-protect": "snyk protect",
     "prepare": "npm run snyk-protect"
   },

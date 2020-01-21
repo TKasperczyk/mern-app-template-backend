@@ -15,9 +15,51 @@ const loginMiddleware = require('./middleware/login');
 const registerMiddleware = require('./middleware/register');
 const notFoundMiddleware = require('./middleware/notFound');
 
+/**
+    An ordered list of routes that are secured by JWT auth and the access list module
+**/
+const routes = {
+    'get': {
+        '/api/user/:id?': (req, res) => {
+            if (!permissions.check(req.user.role, 'data.user', 'get', {data: {id: req.params.id}, user: req.user})){
+                return handleError(req, res, 'You don\'t have sufficient permissions to perform this action', 401);
+            }
+            performApiCall({req, res, apiFunc: api.user.get, args: { id: req.params.id }});
+        },
+    },
+    'post': {
+    },
+    'patch': {
+        '/api/user/:id': (req, res) => {
+            if (!h.checkMandatoryArgs({argMap: { data: true }, args: req.body})){
+                return handleError(req, res, 'Incorrect or incomplete arguments', 400);
+            }
+            if (!permissions.check(req.user.role, 'data.user', 'update', {data: {id: req.params.id}, user: req.user})){
+                return handleError(req, res, 'You don\'t have sufficient permissions to perform this action', 401);
+            }
+            //Don't allow to update roles
+            delete req.body.data.role;
+            //Make sure that the password is stored as a hash
+            if (typeof req.body.data.password === 'string' && req.body.data.password.length > 0){
+                req.body.data.password = h.generateHash(req.body.data.password);
+            } else {
+                delete req.body.data.password;
+            }
+            performApiCall({req, res, apiFunc: api.user.update, args: { id: req.params.id, user: req.body.data }});
+        },
+    },
+    'delete': {
+        '/api/user/:id': (req, res) => {
+            if (!permissions.check(req.user.role, 'data.user', 'delete', {data: {id: req.params.id}, user: req.user})){
+                return handleError(req, res, 'You don\'t have sufficient permissions to perform this action', 401);
+            }
+            performApiCall({req, res, apiFunc: api.user.delete, args: {id: req.params.id}});
+        },
+    }
+};
 
 /**
-    Parses the routes object (defined in module.exports) and puts the routes in the express.Router instance
+    Parses the routes object and puts the routes in the express.Router instance
 **/
 const registerRoutes = (routes, method) => {
     for (let key in routes){ //For method route do a recursive call with its name as the second argument
@@ -105,49 +147,14 @@ const route = (routes) => {
     return router;
 };
 
-module.exports = () => {
-    permissions.init();
-    /**
-        An ordered list of routes that are secured by JWT auth and the access list module
-    **/
-    const routes = {
-        'get': {
-            '/api/user/:id?': (req, res) => {
-                if (!permissions.check(req.user.role, 'data.user', 'get', {data: {id: req.params.id}, user: req.user})){
-                    return handleError(req, res, 'You don\'t have sufficient permissions to perform this action', 401);
-                }
-                performApiCall({req, res, apiFunc: api.user.get, args: { id: req.params.id }});
-            },
-        },
-        'post': {
-        },
-        'patch': {
-            '/api/user/:id': (req, res) => {
-                if (!h.checkMandatoryArgs({argMap: { data: true }, args: req.body})){
-                    return handleError(req, res, 'Incorrect or incomplete arguments', 400);
-                }
-                if (!permissions.check(req.user.role, 'data.user', 'update', {data: {id: req.params.id}, user: req.user})){
-                    return handleError(req, res, 'You don\'t have sufficient permissions to perform this action', 401);
-                }
-                //Don't allow to update roles
-                delete req.body.data.role;
-                //Make sure that the password is stored as a hash
-                if (typeof req.body.data.password === 'string' && req.body.data.password.length > 0){
-                    req.body.data.password = h.generateHash(req.body.data.password);
-                } else {
-                    delete req.body.data.password;
-                }
-                performApiCall({req, res, apiFunc: api.user.update, args: { id: req.params.id, user: req.body.data }});
-            },
-        },
-        'delete': {
-            '/api/user/:id': (req, res) => {
-                if (!permissions.check(req.user.role, 'data.user', 'delete', {data: {id: req.params.id}, user: req.user})){
-                    return handleError(req, res, 'You don\'t have sufficient permissions to perform this action', 401);
-                }
-                performApiCall({req, res, apiFunc: api.user.delete, args: {id: req.params.id}});
-            },
-        }
-    };
-    return route(routes); //Return an express Router instance
+permissions.init();
+module.exports = {
+    //Return an express Router instance
+    instance: route.bind(null, routes),
+    __private: {
+        routes,
+        performApiCall,
+        handleError,
+        registerRoutes
+    }
 };

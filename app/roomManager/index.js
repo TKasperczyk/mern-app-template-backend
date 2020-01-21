@@ -78,7 +78,9 @@ class RoomManager {
         }
     }
     async destroy(){
-        return await this._client.quit();
+        if (this._client.connected){
+            return this._client.end(true);
+        }
     }
     /**
         Returns an object containing all the stored rooms (its keys represent room names) in the given namespace

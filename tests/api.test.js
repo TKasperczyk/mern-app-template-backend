@@ -14,10 +14,10 @@ describe('api', () => {
 
         //Remove the mock user before and after running the tests
         beforeAll(async () => {
-            await testH.fn.cleanMockUsers();
+            await testH.fn.cleanMockUsers(db);
         });
         afterAll(async () => {
-            await testH.fn.cleanMockUsers();
+            await testH.fn.cleanMockUsers(db);
         });
     
         describe('add', () => {
@@ -38,7 +38,7 @@ describe('api', () => {
                         inputObj: testH.userMocks.basic(),
                         modelName: notExistingModelMock
                     })
-                ).rejects.toEqual('Wrong modelName argument');
+                ).rejects.toThrow('rong modelName argument');
             });
             it('should throw when the input object is wrong', async () => {
                 const wrongInputObjectMock = 'wrongInputObject';
@@ -47,7 +47,7 @@ describe('api', () => {
                         inputObj: wrongInputObjectMock,
                         modelName: 'data.user'
                     })
-                ).rejects.toEqual('Wrong inputObj argument');
+                ).rejects.toThrow('rong inputObj argument');
             });
             it('should apply the modifier func when it is defined', async () => {
                 const roleMock = 'roleMock';
@@ -126,14 +126,14 @@ describe('api', () => {
                 await expect(generics.update({
                     inputObj: userAltMock,
                     modelName: 'data.user',
-                })).rejects.toMatch(/Wrong id argument/);
+                })).rejects.toThrow('rong id argument');
             });
             it('should throw when the inputObj argument is wrong', async () => {
                 await expect(generics.update({
                     id: userIdMock,
                     inputObj: '',
                     modelName: 'data.user',
-                })).rejects.toEqual('Wrong inputObj argument');
+                })).rejects.toThrow('rong inputObj argument');
             });
             it('should apply the modifier func when it is defined', async () => {
                 const roleMock = 'roleMock';
@@ -165,12 +165,12 @@ describe('api', () => {
                 await expect(generics.delete({
                     id: userIdMock,
                     modelName: 'data.user',
-                })).rejects.toMatch('Failed to delete');
+                })).rejects.toThrow('ailed to delete');
             });
             it('should throw if the id argument is undefined', async () => {
                 await expect(generics.delete({
                     modelName: 'data.user',
-                })).rejects.toMatch('Wrong id argument');
+                })).rejects.toThrow('rong id argument');
             });
         });
     });
@@ -179,10 +179,11 @@ describe('api', () => {
     
         //Remove the mock user before and after running the tests
         beforeAll(() => {
-            return testH.fn.cleanMockUsers();
+            return testH.fn.cleanMockUsers(db);
         });
-        afterAll(() => {
-            return testH.fn.cleanMockUsers();
+        afterAll(async () => {
+            await testH.fn.cleanMockUsers(db);
+            return db.mongoose.connection.close();
         });
     
         it('should allow to add users', async () => {

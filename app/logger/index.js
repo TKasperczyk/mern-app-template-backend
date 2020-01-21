@@ -156,9 +156,9 @@ winston.addColors(customLevels.colors);
 
 /**
     HTTP traffic logger
+    If we're testing, we don't want Winston's DailyRotateFile to interfere with the FS, therefore we assign an empty function in that case
 **/
-
-const httpLogger = winston.createLogger({
+const httpLogger = process.env.NODE_ENV === 'test' ? {http: () => {}} : winston.createLogger({
     levels: customLevels.levels,
     transports: [
         new (winston.transports.DailyRotateFile)({
