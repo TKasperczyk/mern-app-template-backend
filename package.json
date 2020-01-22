@@ -55,7 +55,7 @@
     "socket.io-redis": "^5.2.0",
     "winston": "^3.2.1",
     "winston-daily-rotate-file": "^4.4.1",
-    "snyk": "^1.278.1"
+    "snyk": "^1.278.2"
   },
   "devDependencies": {
     "coveralls": "^3.0.9",
