@@ -1,10 +1,11 @@
 'use strict';
 
 /**
-    Manages a periodic function execution.
-    Can be used to send scheduled events, perform database cleanups, reload the configuration periodically etc.
-**/
-//Uncomment if you want to use this module
+ * Manages a periodic function execution.
+ * Can be used to send scheduled events, perform database cleanups, reload the configuration periodically etc.
+ */
+
+//Uncomment if you want to use this module and change the provided example
 /*
 const schedule = require('node-schedule');
 const config = require('../config');

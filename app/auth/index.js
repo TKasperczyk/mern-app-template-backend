@@ -1,12 +1,14 @@
 'use strict';
 
 /**
-    Functionalities of the auth module:
-    - serializing and deserializing a user
-    - checking if the supplied credentials are correct
-    - creating passport authentication strategies
-    - authorizing socket.io connections
-**/
+ * Functionalities of the auth module:
+ * - serializing and deserializing a user
+ * - checking if the supplied credentials are correct
+ * - creating passport authentication strategies
+ * - authorizing socket.io connections
+ * It exports a function that registers the three core passport strategies (jwt, register (signup) and local) used in the app.
+ * It also exports a function that allows for securing socket.io connections
+ */
 
 const passport = require('passport');
 const localStrategy = require('passport-local');
@@ -21,8 +23,13 @@ const db = require('../db').mongo;
 const logger = require('../logger').appLogger;
 
 /**
-    Checks the supplied password and login against the user's mongoDB record
-**/
+ * @description checks the supplied password and login against the user's mongoDB record
+ * @param {Object}   [req] the express request object passed by Passport  
+ * @param {String}   [login] the user's login
+ * @param {String}   [password] the user's password 
+ * @param {Function} [done] the callback - http://www.passportjs.org/docs/configure/#verify-callback
+ * @returns {?} the callback call
+ */
 const localAuthProcessor = async (req, login, password, done) => {
     logger.debug(`Starting to authenticate: ${login}`, {identifier: 'auth localAuthProcessor'});
     try {
@@ -30,7 +37,7 @@ const localAuthProcessor = async (req, login, password, done) => {
         if (!user){ //If the user wasn't found
             logger.warn(`Login attempt failed from ${req.connection.remoteAddress}: user '${login}' doesn't exist`, {identifier: 'auth localAuthProcessor'});
             return done('Authentication error', false);
-        } else if (!h.isValidPassword(user, password)){ //If the user was found, but his password wasn't valid
+        } else if (!h.isValidPassword({hashedPassword: user.password, cleartextPassword: password})){ //If the user was found, but his password wasn't valid
             logger.warn(`Login attempt failed from ${req.connection.remoteAddress}: password for '${login}' is incorrect`, {identifier: 'auth localAuthProcessor'});
             return done('Authentication error', false);
         } else { //Everything ok
@@ -45,14 +52,18 @@ const localAuthProcessor = async (req, login, password, done) => {
 };
 
 /**
-    Checks the supplied jwtPayload's user ID against the user's mongoDB record
-**/
+ * @description checks the supplied jwtPayload's user ID against the user's mongoDB record
+ * @param {Object}   [req] the express request object passed by Passport  
+ * @param {Object}   [jwtPayload] a decoded and parsed JWT containing the user's ID (_id)
+ * @param {Function} [done] the callback - http://www.passportjs.org/docs/configure/#verify-callback
+ * @returns {?} the callback call
+ */
 const jwtAuthProcessor = async (req, jwtPayload, done) => {
     logger.debug(`Starting to authenticate '${jwtPayload.login}'`, {identifier: 'auth jwtAuthProcessor'});
     try{
         //Extract the user's ID and check if it exists in the database
         const user = await db.models['data.user'].findById(jwtPayload._id).select('-password').lean(); //Lean because other functions depending on the user object don't use .toObject
-        if (!user){ //If the user wasn't found, throw an auth error
+        if (!user){ //If the user wasn't found, return an auth error
             logger.warn(`Login attempt failed from '${req.connection.remoteAddress}': user '${jwtPayload.login}' doesn't exist`, {identifier: 'auth jwtAuthProcessor'});
             return done('Authentication error', false);
         } else { //Everything ok, proceed
@@ -65,10 +76,14 @@ const jwtAuthProcessor = async (req, jwtPayload, done) => {
     }
 };
 
-/** 
-    Creates a new user if the login isn't already taken.
-    Sets the role to: user
-**/
+/**
+ * @description creates a new user if the login isn't already taken. Sets the role to: user
+ * @param {Object}   [req] the express request object passed by Passport  
+ * @param {String}   [login] the user's login
+ * @param {String}   [password] the user's password 
+ * @param {Function} [done] the callback - http://www.passportjs.org/docs/configure/#verify-callback
+ * @returns {?} the callback call
+ */
 const registerProcessor = async (req, login, password, done) => {
     logger.verbose(`Starting to register a new user: ${login}`, {identifier: 'auth registerProcessor'});
     try {
@@ -77,7 +92,7 @@ const registerProcessor = async (req, login, password, done) => {
             logger.warn(`Register attempt failed from ${req.connection.remoteAddress}: user ${login} already exists`, {identifier: 'auth registerProcessor'});
             return done('Username already taken', false);
         } else { //Everything ok
-            const hashedPassword = h.generateHash(password);
+            const hashedPassword = h.generateHash({password});
             const user = await db.models['data.user'].create({login, password: hashedPassword, role: 'user'});
             logger.debug(`Register attempt of ${login} succeeded from ${req.connection.remoteAddress}`, {identifier: 'auth registerProcessor'});
             const userObj = user.toObject();
@@ -91,6 +106,10 @@ const registerProcessor = async (req, login, password, done) => {
 };
 
 module.exports = {
+    /**
+     * @description register all three Passport strategies and optionally call registerIo if the io param is defined
+     * @param {Object} [io] the result of require('socket.io')(httpServer)
+     */
     registerStrategies: (io) => {
         passport.use('login', new localStrategy({
             passReqToCallback: true,
@@ -118,6 +137,10 @@ module.exports = {
             module.exports.registerIo(io);
         }
     },
+    /**
+     * @description registers a custom middleware that checks whether there's a "token" query parameter in the request. The token must hold a correct JWT. The sole purpuse of this middleware is to close the socket connection when the token is missing or malformed. It should be done by passport-jwt.socketio, but for some reason it's not and we have to do it ourselves. The function also registers the passport-jwt.socketio middleware in the io instance
+     * @param {Object} [io] the result of require('socket.io')(httpServer)
+     */
     registerIo: (io) => {
         //Check if the request URL contains an auth token (JWT)
         io.use((socket, next) => {

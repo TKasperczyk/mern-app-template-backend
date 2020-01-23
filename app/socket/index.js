@@ -1,16 +1,16 @@
 'use strict';
 
 /**
-    Global messages that are sent to the users
-**/
+ * Handles all socket.io connections. Authentication of websocket requests is handled in the auth module
+ */
 
 const logger = require('../logger').appLogger;
 
 /**
-    Creates a virtual room array. Supports namespaces. Doesn't have anything to do with socket.rooms, but should be used alongside with it.
-    If you're joining a room in socket.io, you should also join it in the roomManager
-    Room and namespace names CANNOT be numbers even in a String form
-**/
+ * Creates a virtual room array. Supports namespaces. Doesn't have anything to do with socket.rooms, but should be used alongside.
+ * If you're joining a room in socket.io, you should also join it in the roomManager
+ * Room and namespace names CANNOT be numbers even in a String form
+ */
 const RoomManager = require('../roomManager');
 
 module.exports = (io, app) => {

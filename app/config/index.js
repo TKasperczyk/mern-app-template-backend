@@ -1,9 +1,9 @@
 'use strict';
 
 /**
-    Imports configuration from /config/config.json file
-    The config will be exported along with the _reload function that allows to reload the configuration without "re-requiring" the module or restarting the daemon
-**/
+ * Imports the configuration from /config/config.json.
+ * The config will be exported along with the _reload function that allows to reload the configuration without "re-requiring" the module or restarting the app
+ */
 
 //Using graceful-fs to limit the amount of open file descriptors
 const fs = require('graceful-fs');
@@ -15,8 +15,9 @@ const configPath = path.resolve(__dirname, '../../config/config.json');
 let configJson = null;
 
 /**
-    Loads the config.json file to the configJson variable
-**/
+ * @description checks if the config file exists. If so, reads its contents and parses it as a JS object
+ * @throw {Error} will throw if the config file doesn't exist or it's not parsable
+ */
 const loadConfig = () => {
     if (fs.existsSync(configPath)){
         try{

@@ -5,10 +5,11 @@ module.exports = {
     setupFilesAfterEnv: [path.resolve(__dirname, './jest.setup.js')],
     collectCoverageFrom: [
         '**/*.js',
-        '!data/keyMap.js',
-        '!/node_modules/',
-        '!jest.config.js',
-        '!jest.setup.js',
-        '!cluster.js' //We can't really test the cluster
+        '!**/node_modules/**',
+        '!<rootDir>/jest.config.js',
+        '!<rootDir>/jest.setup.js',
+        '!<rootDir>/tests/**',
+        '!<rootDir>/coverage/**',
+        '!<rootDir>/cluster.js' //We can't really test the cluster
     ],
 };

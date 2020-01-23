@@ -1,9 +1,8 @@
 'use strict';
 
 /**
-    Sets up the whole routing and access to certain functionalities. Exposes the router object which can be injected as a middleware to express
-**/
-
+ * Sets up the whole routing and access to the routes. Exposes the router object which can be injected as a middleware to express
+ */
 const passport = require('passport');
 const router = require('express').Router();
 const h = require('../helpers');
@@ -16,15 +15,15 @@ const registerMiddleware = require('./middleware/register');
 const notFoundMiddleware = require('./middleware/notFound');
 
 /**
-    An ordered list of routes that are secured by JWT auth and the access list module
-**/
+ *  An ordered list of routes that are secured by JWT auth, the acl module and the permissions module
+ */
 const routes = {
     'get': {
         '/api/user/:id?': (req, res) => {
             if (!permissions.check(req.user.role, 'data.user', 'get', {data: {id: req.params.id}, user: req.user})){
                 return handleError(req, res, 'You don\'t have sufficient permissions to perform this action', 401);
             }
-            performApiCall({req, res, apiFunc: api.user.get, args: { id: req.params.id }});
+            performApiCall({req, res, apiFunc: api.controllers['data.user'].get, args: { id: req.params.id }});
         },
     },
     'post': {
@@ -41,11 +40,11 @@ const routes = {
             delete req.body.data.role;
             //Make sure that the password is stored as a hash
             if (typeof req.body.data.password === 'string' && req.body.data.password.length > 0){
-                req.body.data.password = h.generateHash(req.body.data.password);
+                req.body.data.password = h.generateHash({password: req.body.data.password});
             } else {
                 delete req.body.data.password;
             }
-            performApiCall({req, res, apiFunc: api.user.update, args: { id: req.params.id, user: req.body.data }});
+            performApiCall({req, res, apiFunc: api.controllers['data.user'].update, args: { id: req.params.id, user: req.body.data }});
         },
     },
     'delete': {
@@ -53,7 +52,7 @@ const routes = {
             if (!permissions.check(req.user.role, 'data.user', 'delete', {data: {id: req.params.id}, user: req.user})){
                 return handleError(req, res, 'You don\'t have sufficient permissions to perform this action', 401);
             }
-            performApiCall({req, res, apiFunc: api.user.delete, args: {id: req.params.id}});
+            performApiCall({req, res, apiFunc: api.controllers['data.user'].delete, args: {id: req.params.id}});
         },
     }
 };
@@ -61,6 +60,11 @@ const routes = {
 /**
     Parses the routes object and puts the routes in the express.Router instance
 **/
+/**
+ * @description registers all the routes from the "routes" object in the express router instance. Works recursively
+ * @param {Object} [routes] the object defined at the beginning of this module
+ * @param {String} [method] the HTTP req method from the routes object - used for recursion, shouldn't be specified when calling this function outside of it
+ */
 const registerRoutes = (routes, method) => {
     for (let key in routes){ //For method route do a recursive call with its name as the second argument
         if(typeof routes[key] === 'object' && routes[key] !== null && !(routes[key] instanceof Array)){
@@ -83,14 +87,36 @@ const registerRoutes = (routes, method) => {
 /**
     Sends a negative response to the client
 **/
+/**
+ * @description sends a negative response to the client with an error message
+ * @param {Object} [req] express request object
+ * @param {Object} [res] express response object
+ * @param {Object|String} [error] either an error message or an object containing the error message
+ * @param {Number} [statusCode = 500] the status code to set on the response
+ * @returns {typeof res.status(Number)} the result of res.status(statusCode)
+ */
 const handleError = (req, res, error, statusCode = 500) => {
-    logger.error(`Error (req by ${req.user.login}): ${h.optionalStringify(error)}`, {identifier: `router ${req.method} ${req.url}`, meta: {query: req.query, params: req.params}});
-    return res.status(statusCode).jsonp(h.generateResponse(false, null, `Something went wrong while performing an API call: ${h.optionalStringify(error)}`));
+    const optionallyStringifiedError = h.optionalStringify(error);
+    logger.error(`Error (req by ${req.user.login}): ${optionallyStringifiedError}`, {identifier: `router ${req.method} ${req.url}`, meta: {query: req.query, params: req.params}});
+    return res.status(statusCode).jsonp(
+        h.generateResponse({
+            status: false, 
+            error: `Something went wrong while performing an API call: ${optionallyStringifiedError}`
+        })
+    );
 };
 
 /**
-    Performs a call to apiFunc expecting that it will return a promise and SOME value. It passes the args object to it as an argument. Calls successCallback if everything went fine. Sends a response to the client.
-**/
+ * @description performs a call to the given API function expecting that it will return a promise and SOME value. It passes the given args object to that function. Calls the given successCallback with req, res and the API func result if everything went fine. Sends a response to the client. Allows for sending a piped response instead of the standard response object (e.g. for binary data)
+ * @param {Object} [req] 
+ * @param {Object} [res] 
+ * @param {Function} [apiFunc] 
+ * @param {args} [args] 
+ * @param {Function} [successCallback] 
+ * @param {Boolean} [logging = true] 
+ * @param {Boolean} [directPipe = false]
+ * @param {Array} [directPipeHeaders = []] 
+ */
 const performApiCall = ({req, res, apiFunc, args, successCallback, logging = true, directPipe = false, directPipeHeaders = []}) => {
     const callId = h.generateCallId();
     logger.verbose(`${req.user.login} called ${apiFunc.name}`, {callId, identifier: `router ${req.method} ${req.url}`, logging, meta: {query: req.query, params: req.params, args}});
@@ -106,7 +132,11 @@ const performApiCall = ({req, res, apiFunc, args, successCallback, logging = tru
                 });
                 return result.pipe(res);
             } else {
-                return res.status(200).jsonp(h.generateResponse(true, result, ''));
+                return res.status(200).jsonp(
+                    h.generateResponse({
+                        status: true, data: result
+                    })
+                );
             }
         }
     }).catch((error) => {
@@ -129,7 +159,12 @@ const route = (routes) => {
         (req, res, next) => {
             next();
         }, (err, req, res, next) => {
-            return res.status(401).send(h.generateResponse(false, null, 'Unauthorized'));
+            return res.status(401).send(
+                h.generateResponse({
+                    status: false, 
+                    error: 'Unauthorized'
+                })
+            );
         }
     );
     //Secure all routes with an access list

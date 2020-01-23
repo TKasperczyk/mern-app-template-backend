@@ -23,7 +23,7 @@ describe('auth', () => {
         await testH.fn.cleanMockUsers(db);
     });
     afterAll(async () => {
-        await testH.fn.cleanMockUsers(db);
+        //await testH.fn.cleanMockUsers(db);
         db.mongoose.connection.close();
     });
     
@@ -70,7 +70,7 @@ describe('auth', () => {
                 expect(user).toHaveProperty('login');
                 expect(user).not.toHaveProperty('password');
                 expect(user.login).toBe(userMock.login);
-                const jwToken = h.generateJwt(user);
+                const jwToken = h.generateJwt({from: user});
                 jwtPayload = jwt.decode(jwToken);
                 done();
             });

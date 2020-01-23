@@ -12,7 +12,11 @@ describe('helpers', () => {
         expect(h.isMasterWorker()).toBeFalsy();
     });
     it('generateResponse should return a correct object response', () => {
-        let response = h.generateResponse(false, 'data', 'error');
+        let response = h.generateResponse({
+            status: false, 
+            data: 'data', 
+            error: 'error'
+        });
         expect(response).toBeTruthy();
         expect(response.status).toBe(false);
         expect(response.data).toBe('data');
@@ -26,7 +30,7 @@ describe('helpers', () => {
     });
     it('generateJwt should return a proper JWT token', () => {
         const userMock = testH.userMocks.basic();
-        const token = h.generateJwt(userMock);
+        const token = h.generateJwt({from: userMock});
         expect(jwt.verify(token, config.jwtKey)).toBeTruthy();
     });
     it('generateCallId should generate a random set of numbers', () => {
@@ -37,7 +41,7 @@ describe('helpers', () => {
     });
     it('generateHash should generate a correct bCrypt hash', () => {
         const userMock = testH.userMocks.basic();
-        const hash = h.generateHash(userMock.password, 5);
+        const hash = h.generateHash({password: userMock.password, rounds: 5});
         expect(hash).toEqual(expect.stringMatching(/[a-zA-Z1-9]{1,}/));
         expect(bCrypt.compareSync(userMock.password, hash)).toBeTruthy();
     });
@@ -47,17 +51,17 @@ describe('helpers', () => {
 });
 describe('helpers isValidPassword', () => {
     const userMock = testH.userMocks.basic();
-    const hash = h.generateHash(userMock.password, 5);
+    const hash = h.generateHash({password: userMock.password, rounds: 5});
     const cleartextPassword = userMock.password;
     userMock.password = hash;
 
     it('should return false if the password is wrong', () => {
         config.openAuth = false;
-        expect(h.isValidPassword(userMock, 'wrongPassword')).toBe(false);
+        expect(h.isValidPassword({hashedPassword: userMock.password, cleartextPassword: 'wrongPassword'})).toBe(false);
     });
     it('should return true the password is correct', () => {
         config.openAuth = false;
-        expect(h.isValidPassword(userMock, cleartextPassword)).toBe(true);
+        expect(h.isValidPassword({hashedPassword: userMock.password, cleartextPassword})).toBe(true);
     });
 });
 describe('helpers optionalStringify', () => {

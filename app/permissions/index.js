@@ -1,20 +1,22 @@
 'use strict';
 
 /**
-    Allows to check if the given user (defined by his role) is allowed to perform the given action on the given model
-    The structure of /config/permissions.json:
-    {
-        <roleName>: {
-            <mongooseModelName>: {
-                <actionName>: <permission>,
-            }
-        }
-    }
-    <roleName> - should correspond to the user's role
-    <mongooseModelName> - the model must be defined in mongoose prior to this module's initialization
-    <actionName> - supported action names: "get", "update", "delete", "add"
-    <permission> - either a boolean indicating whether the user has the permission, or "function" indicating that there's a custom checking function defined in /app/permissions/permissionFunctions.js
-**/
+ * Allows to check if the given user (defined by his role) is allowed to perform the given action on the given model.
+ * Full description with details: https://github.com/TKasperczyk/mern-app-template#permissions
+ * You need to call the init method (once) before doing any checks
+ * The structure of /config/permissions.json:
+ * {
+ *     <roleName>: {
+ *         <mongooseModelName>: {
+ *             <actionName>: <permission>,
+ *         }
+ *     }
+ * }
+ * <roleName> - should correspond to the user's role
+ * <mongooseModelName> - the model must be defined in mongoose prior to this module's initialization
+ * <actionName> - supported action names: "get", "update", "delete", "add"
+ * <permission> - either a boolean indicating whether the user has the permission, or "function" indicating that there's a custom checking function defined in /app/permissions/permissionFunctions.js
+ */
 
 //Using graceful-fs to limit the amount of open file descriptors
 const fs = require('graceful-fs');
@@ -26,8 +28,10 @@ const permissionFunctions = require('./permissionFunctions');
 const logger = require('../logger').appLogger;
 
 /**
-    Loads the permissions.json file into the global `permissions` variable
-**/
+ * @description loads the permissions.json file into the global `permissions` variable
+ * @param {String} [permissionsPath] full path to the permissions.json file
+ * @throws {Error} if the permissions.json file is not found or not parsable
+ */
 const getPermissionsJson = (permissionsPath) => {
     if (fs.existsSync(permissionsPath)){
         try{
@@ -41,9 +45,11 @@ const getPermissionsJson = (permissionsPath) => {
 };
 
 /**
-    Validates the structure of permissions.json and permissionFunctions.js.
-    Throws an error if there's something wrong with the structure
-**/
+ * @description checks if the data in permissionsJson and permissionFunctions are compliant to our rules and standards
+ * @param {Object} [permissionsJson] a parsed permissions.json file - the result of getPermissionsJson
+ * @param {Object} [permissionFunctions] a list of functions with custom checks - the result of requiring ./permissionFunctions.js
+ * @throws {Error} if the structure of permissionsJson or permissionsFunctions is wrong
+ */
 const validatePermissions = (permissionsJson, permissionFunctions) => {
     //Some models have dots in their names, so we can't use the default dot
     const picker = new dotObj('->');
@@ -90,6 +96,15 @@ const validatePermissions = (permissionsJson, permissionFunctions) => {
 };
 
 module.exports = {
+    /**
+     * @description checks if the given role can perform the given action on the given model. The init function needs to be called before using this one
+     * @param {String} [roleName] user's role name
+     * @param {String} [modelName] mongoose model name
+     * @param {String} [actionName ]one of: "get", "update", "delete", "add"
+     * @param {*} [data = null] an optional parameter that will be passed to your custom checking function - can be anything
+     * @param {Object} [user = null] an optional parameter that will be passed to your custom checking function - it should be the user object, but doesn't need to
+     * @returns {Boolean} false if the arguments are incorrect or the role can't perform the action on the model 
+     */
     check: (roleName, modelName, actionName, {data = null, user = null} = {}) => {
         const dotter = new dotObj('->');
         const modelPermissions = dotter.pick(`${roleName}->${modelName}`, module.exports.__private.permissionsJson);
@@ -117,6 +132,9 @@ module.exports = {
             return actionPermission;
         }
     },
+    /**
+     * @description loads permissions to the module and validates them. Needs to be called before using the check function
+     */
     init: () => {
         module.exports.__private.permissionsJson = getPermissionsJson(module.exports.__private.permissionsPath);
         validatePermissions(module.exports.__private.permissionsJson, module.exports.__private.permissionFunctions);

@@ -1,8 +1,8 @@
 'use strict';
 
 /**
-    Sets up the mongoDB connection
-**/
+ * Sets up the connection with MongoDB, exposes all the models 
+ */
 
 const config = require('../../config');
 const mongoose = require('mongoose');
@@ -20,6 +20,10 @@ const connectionOptions = {
     useFindAndModify: false
 };
 
+/**
+ * @description creates an object with mongoose auth options based on the configuration
+ * @returns {Object} either an empty object or an object with database credentials (depends on config.db.mongo.auth). The resulting object can be passed to mongoose.connect
+ */
 const generateAuthOptions = () => {
     let authOptions = {};
     if (config.db.mongo.auth){

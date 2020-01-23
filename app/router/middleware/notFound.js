@@ -1,5 +1,9 @@
 'use strict';
 
+/**
+ * Handles routes that aren't found - sends 404
+ */
+
 const logger = require('../../logger').appLogger;
 
 module.exports = (req, res, next) => {

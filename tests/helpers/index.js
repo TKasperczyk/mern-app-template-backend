@@ -1,10 +1,17 @@
 'use strict';
 
+/**
+ * A set of helper functions used in our tests
+ */
+
 const mongoose = require('mongoose');
 const path = require('path');
-
 module.exports = {
     userMocks: {
+        /**
+         * @description generates a basic user mock with a proper mongoose id (new each time) and a cleartext password - no admin
+         * @returns {Object} the user object
+         */
         basic: () => {
             return {
                 login: '_mocklogin',
@@ -13,6 +20,10 @@ module.exports = {
                 role: 'user'
             };
         },
+        /**
+         * @description generates an alternative user mock with a proper mongoose id (new each time) and a cleartext password - no admin
+         * @returns {Object} the user object
+         */
         alt: () => {
             return {
                 login: '_mocklogin2',
@@ -21,6 +32,10 @@ module.exports = {
                 role: 'user'
             };
         },
+        /**
+         * @description generates an admin user mock with a proper mongoose id (new each time) and a cleartext password
+         * @returns {Object} the user object
+         */
         admin: () => {
             return {
                 login: '_mockloginadmin',
@@ -32,6 +47,10 @@ module.exports = {
     },
     fileMocks: {
         permissions: {
+            /**
+             * @description generates a basic mock of permissions.json in a stringified form
+             * @returns {String} a set of permission rules that can be injected into our graceful.fs mock
+             */
             basic: () => {
                 return `{
                     "admin": {
@@ -49,6 +68,10 @@ module.exports = {
             },
         },
         acl: {
+            /**
+             * @description generates a basic mock of acl.json in a stringified form
+             * @returns {String} a set of acl rules that can be injected into our graceful.fs mock
+             */
             basic: () => {
                 return `[{
                     "group": "admin",
@@ -72,6 +95,10 @@ module.exports = {
             },
         },
         config: {
+            /**
+             * @description generates a basic mock of config.json in a stringified form
+             * @returns {String} configuration with db localhost and no auth in a stringified form
+             */
             basic: () => {
                 return `{
                     "jwtKey": "RANDOMSTRING",
@@ -115,6 +142,10 @@ module.exports = {
                     }
                 }`;
             },
+            /**
+             * @description generates an alternative mock of config.json in a stringified form
+             * @returns {String} configuration with db localhost and no auth in a stringified form
+             */
             alt: () => {
                 return `{
                     "jwtKey": "ALTRANDOMSTRING",
@@ -158,18 +189,32 @@ module.exports = {
                     }
                 }`;
             },
+            /**
+             * @description generates a malformed mock of config.json in a stringified form
+             * @returns {String} unparsable gibberish
+             */
             malformed: () => {
                 return `{}!}`;
             },
         }
     },
     fn: {
+        /**
+         * @description removes the basic, alt and admin mock users from the database
+         * @param {Object} [db] "mongo" property of the db module (db.mongo)
+         */
         cleanMockUsers: async (db) => {
             await db.models['data.user'].deleteMany({login: module.exports.userMocks.basic().login});
             await db.models['data.user'].deleteMany({login: module.exports.userMocks.alt().login});
             await db.models['data.user'].deleteMany({login: module.exports.userMocks.admin().login});
         },
-        setFsMockConfig: ({configString = null, permissionsString = null, aclString = null} = {configString: null, permissionsString: null, aclString: null}) => {
+        /**
+         * @description uses basic versions of the previously defined file mocks. Allows to pass custom file contents that will be set instead of the generated file mocks. Sets all of them in our graceful-fs mock. You need to call jest.mock('graceful-fs') before using this function
+         * @param {String} [configString = null] if defined, it will be used instead of fileMocks.config.basic()
+         * @param {String} [permissionsString = null] if defined, it will be used instead of fileMocks.permissions.basic()
+         * @param {String} [aclString = null] if defined, it will be used instead of fileMocks.acl.basic()
+         */
+        setFsMockConfig: ({configString = null, permissionsString = null, aclString = null} = {}) => {
             const fileMocks = {
                 [path.resolve(__dirname, '../../config/config.json')]: configString ? configString : module.exports.fileMocks.config.basic(),
                 [path.resolve(__dirname, '../../config/permissions.json')]: permissionsString ? permissionsString : module.exports.fileMocks.permissions.basic(),
@@ -177,7 +222,11 @@ module.exports = {
             };
             require('graceful-fs').__setMockFiles(fileMocks);      
         },
-        resetAll: ({setupConfig = false} = {setupConfig: false}) => {
+        /**
+         * @description resets jest modules and mocks. Can optionally mock graceful-fs and set the mock files by calling setFsMockConfig with default parameters
+         * @param {Boolean} [setupConfig = false] if true, the function will set crucial mock files in graceful-fs mock
+         */
+        resetAll: ({setupConfig = false} = {}) => {
             jest.resetModules();
             jest.resetAllMocks();
             if(setupConfig){
@@ -185,6 +234,10 @@ module.exports = {
                 module.exports.fn.setFsMockConfig();
             }
         },
+        /**
+         * @description allows to upsert the list of mocked files in the graceful-fs mock. You need to call jest.mock('graceful-fs') before using this function
+         * @param {Object} [upsertedFiles] an object containing names and contents of files that should be added to our graceful-fs mock
+         */
         upsertFsMockFiles: (upsertedFiles) => {
             require('graceful-fs').__setMockFiles(upsertedFiles, {resetOld: false});
         }

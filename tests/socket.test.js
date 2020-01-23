@@ -26,10 +26,10 @@ describe('socket', () => {
         //Add the admin user to the database because we need an auth token to perform the tests
         const mockUserAdmin = testH.userMocks.admin();
         delete mockUserAdmin._id;
-        mockUserAdmin.password = h.generateHash(mockUserAdmin.password);
+        mockUserAdmin.password = h.generateHash({password: mockUserAdmin.password});
         const newAdmin = new db.models['data.user'](mockUserAdmin);
         await newAdmin.save();
-        token = h.generateJwt(newAdmin.toObject());
+        token = h.generateJwt({from: newAdmin.toObject()});
         //Run the io server
         const workerId = 1;
         runningServer = server(workerId, () => {

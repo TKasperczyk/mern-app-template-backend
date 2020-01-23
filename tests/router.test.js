@@ -22,7 +22,7 @@ describe('router', () => {
         //Add the admin user to the database
         const mockUserAdminDb = testH.userMocks.admin();
         delete mockUserAdminDb._id;
-        mockUserAdminDb.password = h.generateHash(mockUserAdminDb.password);
+        mockUserAdminDb.password = h.generateHash({password: mockUserAdminDb.password});
         const newAdmin = new db.models['data.user'](mockUserAdminDb);
         await newAdmin.save();
         //Run the io server
@@ -229,7 +229,7 @@ describe('router', () => {
             const user = await db.models['data.user'].findOne({login: mockUser1.login}).select('+password').lean();
             expect(user).toHaveProperty('password');
             expect(user.password.length > 0).toBeTruthy();
-            expect(h.isValidPassword(user, mockUser1.password)).toBe(true);
+            expect(h.isValidPassword({hashedPassword: user.password, cleartextPassword: mockUser1.password})).toBe(true);
         });
         it('should not allow to PATCH all the users with a valid token', async () => {
             const res = await supertest(app)

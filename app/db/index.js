@@ -1,8 +1,8 @@
 'use strict';
 
 /**
-    Provides connection to databases and exposes all models
-**/
+ * Provides connections to databases (currently just MongoDB)
+ */
 
 module.exports = {
     mongo: require('./mongo'),

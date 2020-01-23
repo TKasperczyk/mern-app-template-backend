@@ -1,18 +1,18 @@
 'use strict';
 
 /**
-    Exposes two loggers: appLogger and httpLogger. The first one (appLogger) can be used to log formatted messages to the console. The second one (httpLogger) should be applied as middleware to express.
-    appLogger expects two arguments:
-        @arg logMessage: String,
-        @arg options: Object
-    Possible options:
-    {
-        identifier (optional): a string that identifies the callee
-        meta (optional): an object that will be stringified and appended to the log message
-        logging (optional): a boolean that indicates whether the given message should be logged
-        callId (optional): a string that identifies the async context (when there are multiple messages related to the same asynchronous operation)
-    }
-**/
+ * Exposes two loggers: appLogger and httpLogger. The first one (appLogger) can be used to log formatted messages to the console. The second one (httpLogger) should be applied as middleware to express.
+ *   appLogger expects two arguments:
+ *       @param {String} [logMessage],
+ *       @param {Object} [options]
+ *   and the following options (all optional):
+ *   {
+ *       identifier: a string that identifies the callee
+ *       meta: an object that will be stringified and appended to the log message
+ *       logging: a boolean that indicates whether the given message should be logged
+ *       callId: a string that identifies the async context (when there are multiple messages related to the same asynchronous operation)
+ *   }
+ */
 
 const winston = require('winston');
 const colors = require('colors');
@@ -45,8 +45,10 @@ const customLevels = {
     }
 };
 
+
 /**
-    Formatting the message.
+ * @description creates a winston.format.printf that can be used in custom winston formatters. The produced printf creates standarized log messages based on their metadata (documented at the top)
+ * @example
     Final format:
         timestamp - level {workerId}[identifier] callId: message | META: meta
     Example:
@@ -58,8 +60,9 @@ const customLevels = {
                 "_": "1575557610279"
             },
         }
-**/
-
+ * @param {Boolean} [colorize = false] if true, the resulting message will include colors
+ * @returns {typeof winston.format.printf} an instance of winston printf formatter
+ */
 const appPrintf = ({colorize = false}) => {
     return winston.format.printf((info) => {
         const metaObj = {};
@@ -105,8 +108,10 @@ const appPrintf = ({colorize = false}) => {
 };
 
 /**
-    Winston formatter that will use the appPrintf function
-**/
+ * @description creates a combined winston format - either colorized or not
+ * @param {Boolean} [colorize = false] if true, the resulting formatter will use colors
+ * @returns {typeof winston.format.combine} a combined winston formatter with our custom printf implementation
+ */
 const appFormatter = ({colorize = false}) => {
     if (colorize) {
         return winston.format.combine(
@@ -131,8 +136,8 @@ const appLoggerTransports = [
 ];
 
 /**
-    Application console logger
-**/
+ * Application console logger
+ */
 
 const appLogger = winston.createLogger({
     levels: customLevels.levels,
@@ -155,9 +160,9 @@ const appLogger = winston.createLogger({
 winston.addColors(customLevels.colors);
 
 /**
-    HTTP traffic logger
-    If we're testing, we don't want Winston's DailyRotateFile to interfere with the FS, therefore we assign an empty function in that case
-**/
+ * HTTP traffic logger
+ * If we're testing, we don't want Winston's DailyRotateFile to interfere with the FS, therefore we assign an empty function in that case
+ */
 const httpLogger = process.env.NODE_ENV === 'test' ? {http: () => {}} : winston.createLogger({
     levels: customLevels.levels,
     transports: [
