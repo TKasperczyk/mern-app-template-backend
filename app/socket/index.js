@@ -22,5 +22,12 @@ module.exports = (io, app) => {
         io.on('connection', (socket) => {
             logger.debug('A new connection to /', {identifier: 'socket /'});
         });
+        //No need to lower our coverage with this example function. Writing tests for something that will be changed/removed after installing mern-app-template-backend is pointless
+        /* istanbul ignore next */
+        io.of('/test', (socket) => {
+            socket.on('testPing', () => {
+                socket.emit('testPong', new Date());
+            });
+        });
     });
 };
