@@ -1,3 +1,5 @@
+'use strict';
+
 const jwt = require('jsonwebtoken');
 const bCrypt = require('bcrypt-nodejs');
 const testH = require('./helpers');

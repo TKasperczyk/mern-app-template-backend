@@ -1,3 +1,5 @@
+'use strict';
+
 const io = require('socket.io-client');
 const testH = require('./helpers');
 const server = require('../server');

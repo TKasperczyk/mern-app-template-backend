@@ -119,20 +119,25 @@ const handleError = (req, res, error, statusCode = 500) => {
  * @returns {*} the result of handleError or successCallback or result.pipe (in case of directPipe) or res.jsonp (in case of all the optional parameters having default values)
  */
 const performApiCall = ({req, res, apiFunc, args, successCallback = null, logging = true, directPipe = false, directPipeHeaders = []}) => {
+    //Generate a new call id for this request - it will be passed to API functions for tracing the request in our logger
     const callId = h.generateCallId();
     logger.verbose(`${req.user.login} called ${apiFunc.name}`, {callId, identifier: `router ${req.method} ${req.url}`, logging, meta: {query: req.query, params: req.params, args}});
+    //Call the API func with the provided arguments and the generated call id 
     apiFunc(Object.assign({}, args, {callId})).then((result) => {
+        //Every API function MUST return some result
         if (result === undefined){
             return handleError(req, res, 'API func returned nothing');
         } else {
+            //In some cases, this function's logic might not be sufficient, therefore we allow to customize it in the callback
             if (typeof successCallback === 'function'){
-                return successCallback(req, res, result);
-            } else if (directPipe){
+                return successCallback(req, res, result); //The whole res logic should be inside the callback
+            } else if (directPipe){ //directPipe mode - in this case the result should return a stream that can be piped
+                //Set the provided headers if there are any (by default it's an empty array)
                 directPipeHeaders.forEach((header) => {
                     res.setHeader(header.name, header.value);
                 });
-                return result.pipe(res);
-            } else {
+                return result.pipe(res); //Call the result's pipe method
+            } else { //This is the most common case - no pipe, no success callback, just a simple standarized response object
                 return res.status(200).jsonp(
                     h.generateResponse({
                         status: true, data: result
@@ -140,7 +145,7 @@ const performApiCall = ({req, res, apiFunc, args, successCallback = null, loggin
                 );
             }
         }
-    }).catch((error) => {
+    }).catch((error) => { //API functions may throw
         return handleError(req, res, error);
     });
 };
@@ -192,7 +197,7 @@ permissions.init();
 module.exports = {
     //Return an express Router instance
     instance: route.bind(null, routes),
-    __private: {
+    __private: { //For tests
         routes,
         performApiCall,
         handleError,

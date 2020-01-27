@@ -1,3 +1,5 @@
+'use strict';
+
 const path = require('path');
 const testH = require('./helpers');
 const config = require('../app/config');

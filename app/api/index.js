@@ -26,29 +26,36 @@ const generics = {
      * @returns {Object} the saved object with autopopulated properties and filled default values
      */
     add: async ({inputObj, modelName, modifierFunc = null, logPathPrefix = '', logging = true, callId = null}) => {
+        //Generate a new callId for our logger if it wasn't passed in the parameters
         callId = h.generateCallId(callId);
         logger.api(`Adding a new ${modelName}`, {logging, identifier: `api ${logPathPrefix}${modelName} add`, meta: {inputObj}, callId});
         try{
+            //Make sure that the input object is, in fact, an object
             if (inputObj === undefined || typeof inputObj !== 'object'){
                 throw new Error('Wrong inputObj argument');
             }
+            //Make sure that the given model exists in mongoose 
             if (typeof modelName !== 'string' || mongoDb[modelName] === undefined){
                 throw new Error('Wrong modelName argument');
             }
             logger.api(`Creating a new ${modelName}`, {logging, identifier: `api ${logPathPrefix}${modelName} add`, callId});
+            //Create a new instance of the given mongoose model
             let newObj = new mongoDb[modelName](inputObj);
+            //Overwrite the generated object with the result of modifierFunc if it was passed as a parameter
             if (typeof modifierFunc === 'function'){
                 newObj = modifierFunc(newObj);
             }
             logger.api(`Saving the new ${modelName}`, {logging, identifier: `api ${logPathPrefix}${modelName} add`, callId});
+            //Save the generated object to the database
             const savedObj = await newObj.save();
+            //If everything went fine, search for the created document and return it. We can't return the saved object directly because there might be some properties that should be autopopulated.
             if (savedObj){
                 logger.api(`Successfully added a new ${modelName}`, {logging, identifier: `api ${logPathPrefix}${modelName} add`, meta: {savedObj}, callId});
                 return mongoDb[modelName].findOne(savedObj._id); //For autopopopulate to work
             } else {
                 throw new Error(`Failed to add a new ${logPathPrefix}${modelName}: unknown error`);
             }
-        } catch (error){
+        } catch (error){ //Log and rethrow
             logger.error(`Failed to add a new ${modelName}: ${h.optionalStringify(error)}`, {identifier: `api ${logPathPrefix}${modelName} add`, meta: {inputObj}, callId});
             throw error;
         }
@@ -64,20 +71,24 @@ const generics = {
      * @returns {Object} the deleted object with autopopulated properties and filled default values
      */
     delete: async ({id, modelName, logPathPrefix = '', logging = true, callId = null}) => {
+        //Generate a new callId for our logger if it wasn't passed in the parameters
         callId = h.generateCallId(callId);
         logger.api(`Deleting a ${modelName}`, {logging, identifier: `api ${logPathPrefix}${modelName} delete`, meta: {id}, callId});
         try{
+            //Check if the document ID is correct
             if (id === undefined || typeof id !== 'string' || !(/^[a-fA-F0-9]{24}$/).test(id)){
                 throw new Error('Wrong id argument');
             }
+            //Find and remove the document from the database
             const deletedObj = await mongoDb[modelName].findByIdAndRemove(id).exec();
+            //If everything went fine, return the found and deleted document
             if (deletedObj){
                 logger.api(`Successfully deleted a ${modelName} with an id: ${id}`, {logging, identifier: `api ${logPathPrefix}${modelName} delete`, meta: {deletedObj}, callId});
                 return deletedObj;
             } else {
                 throw new Error(`Failed to delete ${modelName} with id: ${id}`);
             }
-        } catch (error){
+        } catch (error){ //Log and rethrow
             logger.error(`Failed to delete an existing ${modelName}: ${h.optionalStringify(error)}`, {identifier: `api ${logPathPrefix}${modelName} delete`, meta: {id}, callId});
             throw error;
         }
@@ -87,35 +98,41 @@ const generics = {
      * @param {String}  [id] the ID of the object that will be updated
      * @param {Object}  [inputObj] the object that will be passed to the $set operator
      * @param {String}  [modelName] full name of the model that will be updated
-     * @param {Function}   [modifierFunc = null] a custom function that receives the newly created object as an argument. The function can modify that object before it gets updated in the database. The modifier should return the modified object. It's useful when we our inputObj is not complete and we want to do something with its default values defined in mongoose
      * @param {String}  [logPathPrefix = ''] by default, only the model name is appended to the identifier part of the log messages generated by this function. This parameter allows to add an additional identifier prefix if the model name is ambiguous
      * @param {Boolean} [logging = true] allows to controll whether log messages are generated or not
      * @param {String}  [callId = null] if defined, a new callId won't be generated for the log messages generated by this function
      * @throws {Error} will throw if the arguments are wrong or something goes wrong when interacting with the database
      * @returns {Object} the updated object with autopopulated properties and filled default values
      */
-    update: async ({id, inputObj, modelName, modifierFunc, logPathPrefix = '', logging = true, callId = null}) => {
+    update: async ({id, inputObj, modelName, logPathPrefix = '', logging = true, callId = null}) => {
+        //Generate a new callId for our logger if it wasn't passed in the parameters
         callId = h.generateCallId(callId);
         logger.api(`Updating a ${modelName}`, {logging, identifier: `api ${logPathPrefix}${modelName} update`, meta: {id, inputObj}, callId});
         try{
+            //Check if the document ID is correct
             if (id === undefined || typeof id !== 'string' || !(/^[a-fA-F0-9]{24}$/).test(id)){
                 throw new Error(`Wrong id argument: ${id === undefined ? `undefined` : id} ${typeof id} ${typeof id === `string` ? !(/^[a-fA-F0-9]{24}$/).test(id) : 'regex not applicable'}`);
             }
+            //Make sure that the input object is, in fact, an object
             if (inputObj === undefined || typeof inputObj !== 'object'){
                 throw new Error(`Wrong inputObj argument`);
             }
-            if (typeof modifierFunc === 'function'){
-                inputObj = modifierFunc(inputObj);
+            //Make sure that the given model exists in mongoose 
+            if (typeof modelName !== 'string' || mongoDb[modelName] === undefined){
+                throw new Error('Wrong modelName argument');
             }
+            //We will pass the input object in a dotted form because that's what mongoose expects in the $set parameter
             inputObj = dotObj.dot(inputObj);
+            //Update the document
             const updateResult = await mongoDb[modelName].updateOne({_id: id}, {$set: inputObj}, {new: false});
+            //If everything wen't fine, find the updated object and return it (for autopopulate to work)
             if (updateResult.ok){
                 logger.api(`Successfully updated a ${modelName} with an id: ${id}`, {logging, identifier: `api ${logPathPrefix}${modelName} update`, meta: {updateResult}, callId});
                 return await mongoDb[modelName].findById(id);
             } else {
                 throw new Error(`Failed to update ${modelName} with id: ${id}`);
             }
-        } catch (error){
+        } catch (error){ //Log and rethrow
             logger.error(`Failed to update an existing ${modelName}: ${h.optionalStringify(error)}`, {identifier: `api ${logPathPrefix}${modelName} update`, meta: {id, inputObj}, callId});
             throw error;
         }
@@ -131,23 +148,27 @@ const generics = {
      * @return {(Object|Array)} the found object with autopopulated properties or an array of objects if the ID is not defined
      */
     get: async ({id = null, modelName, logPathPrefix = '', logging = true, callId = null}) => {
+        //Generate a new callId for our logger if it wasn't passed in the parameters
         callId = h.generateCallId(callId);
         logger.api(`Getting ${modelName}`, {logging, identifier: `api ${logPathPrefix}${modelName} get`, meta: {id}, callId});
         try{
-            let result = null;
+            //Declare the object that will be returned
+            let result;
+            //If the id wasn't defined, find every document of the given model, otherwise find the document by its ID
             if (id === null){
                 result = await mongoDb[modelName].find({}).lean({autopopulate: true});
             } else {
                 result = await mongoDb[modelName].findById(id).lean({autopopulate: true});
             }
-
+            //Return an empty array if no object was found in either case
             if ((result instanceof Array && result.length === 0) || result === null || result === undefined){
                 logger.api(`Returning 0 ${modelName}s`, {logging, identifier: `api ${logPathPrefix}${modelName} get`, meta: {id}, callId});
                 return [];
             }
+            //Return the found docuement(s)
             logger.api(`Returning ${result instanceof Array ? result.length : 1} ${modelName}s`, {logging, identifier: `api ${logPathPrefix}${modelName} get`, meta: {id, result}, callId});
             return result;
-        } catch (error){
+        } catch (error){ //Log and rethrow
             logger.error(`Failed to get an existing ${modelName}: ${h.optionalStringify(error)}`, {identifier: `api ${logPathPrefix}${modelName} get`, meta: {id}, callId});
             throw error;
         }
@@ -158,7 +179,7 @@ const generics = {
  * The actual API functions (e.g. model controllers)
  */
 module.exports = {
-    __private: {
+    __private: { //For tests
         generics
     },
     controllers: {
@@ -175,7 +196,6 @@ module.exports = {
                 return await generics.add({
                     inputObj: user,
                     modelName: 'data.user',
-                    logPathPrefix: 'user ',
                     logging,
                     callId
                 });
@@ -192,7 +212,6 @@ module.exports = {
                 return await generics.delete({
                     id,
                     modelName: 'data.user',
-                    logPathPrefix: 'user ',
                     logging,
                     callId
                 });
@@ -211,7 +230,6 @@ module.exports = {
                     id,
                     inputObj: user,
                     modelName: 'data.user',
-                    logPathPrefix: 'user ',
                     logging,
                     callId
                 });
@@ -229,7 +247,6 @@ module.exports = {
                 return await generics.get({
                     id,
                     modelName: 'data.user',
-                    logPathPrefix: 'user ',
                     logging,
                     callId
                 });

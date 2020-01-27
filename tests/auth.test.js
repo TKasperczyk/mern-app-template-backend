@@ -1,3 +1,5 @@
+'use strict';
+
 const jwt = require('jsonwebtoken');
 const testH = require('./helpers');
 const h = require('../app/helpers');

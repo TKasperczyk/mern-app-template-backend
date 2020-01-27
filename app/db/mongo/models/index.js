@@ -14,10 +14,15 @@ const fs = require('graceful-fs');
  * @returns {Object} an object with keys representing the file (model) names
  */
 module.exports = (mongoose) => {
+    //This will be returned
     const allModels = {};
+    //Scan the current directory and search for files
     fs.readdirSync(__dirname).forEach(function(file) {
+        //Ignore the index file (this file)
         if (file !== 'index.js') {
+            //Remove the extension from the found file name so it can be used as a mongoose model name
             const fileName = file.match(/.+(?=\.js)/)[0];
+            //Require the found file (require doesn't need the extension) and assign it to the returned object. The file should return a mongoose model
             allModels[fileName] = require('./' + fileName)(mongoose);
         }
     });

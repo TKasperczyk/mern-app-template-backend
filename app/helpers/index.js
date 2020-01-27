@@ -43,6 +43,7 @@ module.exports = {
     * @param {Object} [argMap] - an object with key names representing the "argument names" (keys) that should be present in the args object. If the value of a map key is a function, the function's result will determine whether the argument passes the test. The function should return a boolean and take one argument - the value of the corresponding key in the args object. Otherwise, the value in the map doesn't matter
     * @param {Object} [args] - an object containing the list of arguments.
     * @example 
+    * ```
         checkMandatoryArgs({
             argMap: {
                 ip: true, //Check if exists (any value, can even be false or null)
@@ -55,19 +56,26 @@ module.exports = {
                 routerId: -1
             }
         });
-    * // returns false; //Because the routerId argument didn't pass the optional function check
+    * will return false; //Because the routerId argument didn't pass the optional function check
+    * ```
     * @returns {Boolean} true if all keys of the argsMap object are present in the args object and all optional functions (if any) returned true
     */
     checkMandatoryArgs: ({argMap, args}) => {
+        //If an argument is missing, it will be changed to false
         let allPresent = true;
+        //If an argument is not correct (the custom checking function returned false), it will be changed to false
         let allCorrect = true;
+        //Check every argument that SHOULD exist in the args object by iterating over the args map
         for (let argName in argMap){
+            //If the arg map contains a custom checking function, call it
             if (typeof argMap[argName] === `function`){
                 if (!argMap[argName](args[argName])){
                     allCorrect = false;
+                    //We don't need to check the rest because at least one argument was incorrect
                     break;
                 }
-            } else {
+            } else { //The arg map value wasn't a custom checking function, so we don't need to check if the argument is "correct" (in this case we only care if it's present)
+                //If the argument defined in the map is not present in the args object, break the loop and return false
                 if (args[argName] === undefined){
                     allPresent = false;
                     break;
@@ -82,6 +90,7 @@ module.exports = {
      * @returns {Number or typeof currentCallId} a number ready to pass to the appLogger as a call identifier
      */
     generateCallId: (currentCallId) => {
+        //Generate a new callId only if the current call id is not defined. Makes life easier
         return currentCallId === undefined || currentCallId === null ? Math.floor(Math.random() * Math.pow(10, 17)) : currentCallId;
     },
     /**
@@ -108,9 +117,10 @@ module.exports = {
     * @returns {String or typeof obj} a stringified version of the argument only if it's an actual object with at least one key. Otherwise, returns the original argument.
     */
     optionalStringify: (obj) => {
+        //Make sure that the passed object is, in fact, an object and has some keys
         if (obj instanceof Object && (Object.keys(obj)).length > 0){
             return JSON.stringify(obj, null, 4);
-        } else {
+        } else { //It's not an object or doesn't have any keys, so we don't need to stringify it
             return obj;
         }
     },
@@ -132,10 +142,12 @@ module.exports = {
     * @param {Function} [callback] the async callback that will be executed on each iteration. Should accept at least one argument which will be either an array entry or an object's key value. The second argument is either the current index (a number) in the iterable array or the property name of the iterable object. The third argument is the iterable itself.
     */
     asyncForEach: async (iterable, callback) => {
+        //If the iterable parameter is an array, use the standard for loop
         if (Array.isArray(iterable)){
             for (let index = 0; index < iterable.length; index++){
                 await callback(iterable[index], index, iterable);
             }
+        //If the iterable parameter is an object, use the for-in loop
         } else if (iterable instanceof Object){
             for (let prop in iterable){
                 await callback(iterable[prop], prop, iterable);

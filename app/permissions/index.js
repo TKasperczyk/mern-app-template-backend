@@ -3,7 +3,7 @@
 /**
  * Allows to check if the given user (defined by his role) is allowed to perform the given action on the given model.
  * Full description with details: https://github.com/TKasperczyk/mern-app-template#permissions
- * You need to call the init method (once) before doing any checks
+ * You need to call the exports.init method (once) before doing any checks
  * The structure of /config/permissions.json:
  * {
  *     <roleName>: {
@@ -54,37 +54,41 @@ const validatePermissions = (permissionsJson, permissionFunctions) => {
     //Some models have dots in their names, so we can't use the default dot
     const picker = new dotObj('->');
     try{
+        //Iterate over every role and check if it contains an object
         for (let roleName in permissionsJson){
             const rolePermissions = permissionsJson[roleName];
             if (typeof rolePermissions !== 'object'){
                 throw new Error(`permissions.${roleName} isn't an object`);
             }
+            //Iterate over every model for the given role and check its value and if it exists in mongoose
             for (let modelName in rolePermissions){
                 const modelPermissions = rolePermissions[modelName];
                 if (!db[modelName]){
                     throw new Error(`There's no model called ${modelName} defined in mongoose`);
                 }
-                if (typeof modelPermissions === 'string'){
+                if (typeof modelPermissions === 'string'){ //In this case it must be "*"
                     if (modelPermissions !== '*'){
                         throw new Error(`Unknown value for permissions.[${roleName}][${modelName}]. Supported values: "*", object`);
-                    } else {
+                    } else { //If it's an asterisk, we don't need to check specific permissions because the given role can do everything with the given model
                         continue;
                     }
                 }
+                //Iterate over every action in the given model and check its value
                 for (let actionName in modelPermissions){
                     const actionPermission = modelPermissions[actionName];
-                    if (!['get', 'update', 'delete', 'add'].includes(actionName)){
+                    if (!['get', 'update', 'delete', 'add'].includes(actionName)){ //The action name must be one of these according to our docs
                         throw new Error(`Unknown action name for permissions[${roleName}][${modelName}]: ${actionName}. Supported actions: add, get, update, delete`);
                     }
-                    if (typeof actionPermission === 'string'){
+                    if (typeof actionPermission === 'string'){ //Custom function check mode
                         if (actionPermission !== 'function'){
                             throw new Error(`Unknown value for permissions[${roleName}][${modelName}][${actionName}] Supported values: "function", boolean`);
                         } else {
+                            //Check if any custom function exists in ./permissionFunctions.js for the given action
                             if (typeof picker.pick(`${roleName}->${modelName}->${actionName}`, permissionFunctions) !== 'function'){
                                 throw new Error(`There's no function defined for permissions[${roleName}][${modelName}][${actionName}]. Go to /app/permissions/permissionFunctions.js and define it`);
                             }
                         }
-                    } else if (typeof actionPermission !== 'boolean'){
+                    } else if (typeof actionPermission !== 'boolean'){ //Simple check mode - can perform or can not perform the given action
                         throw new Error(`Unknown value type for permissions[${roleName}][${modelName}][${actionName}]. Supported values: "function", boolean`);
                     }
                 }
@@ -136,10 +140,11 @@ module.exports = {
      * @description loads permissions to the module and validates them. Needs to be called before using the check function
      */
     init: () => {
+        //Import permissions.json and validate if its integrity
         module.exports.__private.permissionsJson = getPermissionsJson(module.exports.__private.permissionsPath);
         validatePermissions(module.exports.__private.permissionsJson, module.exports.__private.permissionFunctions);
     },
-    __private: {
+    __private: { //For tests
         permissionsPath: path.resolve(__dirname, '../../config/permissions.json'),
         permissionsJson: null,
         permissionFunctions,

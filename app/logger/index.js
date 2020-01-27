@@ -20,6 +20,7 @@ const path = require('path');
 require(`winston-daily-rotate-file`);
 const config = require('../config');
 
+//The log levels that will be used with custom colours
 const customLevels = {
     levels: {
         http: 8,
@@ -49,6 +50,7 @@ const customLevels = {
 /**
  * @description creates a winston.format.printf that can be used in custom winston formatters. The produced printf creates standarized log messages based on their metadata (documented at the top)
  * @example
+ * ```
     Final format:
         timestamp - level {workerId}[identifier] callId: message | META: meta
     Example:
@@ -60,6 +62,7 @@ const customLevels = {
                 "_": "1575557610279"
             },
         }
+    ```
  * @param {Boolean} [colorize = false] if true, the resulting message will include colors
  * @returns {typeof winston.format.printf} an instance of winston printf formatter
  */
@@ -69,11 +72,10 @@ const appPrintf = ({colorize = false}) => {
         let metaString = ''; //This will hold the actual meta message - prettified and optionally truncated (based on config.logger.maxMetaLength)
         if (info.meta instanceof Object){ //Extract non-undefined values
             for (let key in info.meta){
-                if (info.meta[key] !== undefined){
-                    metaObj[key] = info.meta[key];
-                }
                 if (info.meta[key] instanceof Error){ //If there are any errors stored in the metadata, extract only the message
                     metaObj[key] = info.meta[key].message;
+                } else if (info.meta[key] !== undefined){ //Otherwise extract the raw metadata entry
+                    metaObj[key] = info.meta[key];
                 }
             }
             metaString = config.logging.prettyMeta ? JSON.stringify(metaObj, null, 4) : JSON.stringify(metaObj);
@@ -190,7 +192,7 @@ httpLogger.stream = { //This will be used by Morgan
 module.exports = {
     appLogger,
     httpLogger,
-    __private: {
+    __private: { //For tests
         appPrintf
     }
 };

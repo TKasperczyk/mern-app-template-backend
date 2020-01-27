@@ -26,7 +26,8 @@ const connectionOptions = {
  */
 const generateAuthOptions = () => {
     let authOptions = {};
-    if (config.db.mongo.auth){
+    //Make sure we don't use auth options when connecting if config.db.mongo.auth isn't true
+    if (config.db.mongo.auth === true){
         authOptions = {
             user: config.db.mongo.user,
             pass: config.db.mongo.password,
@@ -38,11 +39,14 @@ const generateAuthOptions = () => {
     return authOptions;
 };
 
+//Merge possible auth options with the predefined connection options
 const mongoOptions = Object.assign({}, connectionOptions, generateAuthOptions());
+//Connect to the database with the merged options
 mongoose.connect(config.db.mongo.url, mongoOptions).catch((error) => {
     logger.error(`Mongoose error: ${h.optionalStringify(error)}`, {identifier: 'db mongo'});
 });
 
+//Extract the connection for easier access in module.exports
 const connection = mongoose.connection;
 connection.on('error', (error) => {
     logger.error(`Mongoose error: ${h.optionalStringify(error)}`, {identifier: 'db mongo'});
@@ -51,8 +55,8 @@ connection.on('error', (error) => {
 module.exports = {
     connection,
     mongoose,
-    models: require('./models')(mongoose),
-    __private: {
+    models: require('./models')(mongoose), //Load all the models from the ./models directory
+    __private: { //For tests
         generateAuthOptions,
         connectionOptions
     }

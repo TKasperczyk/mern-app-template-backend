@@ -1,3 +1,5 @@
+'use strict';
+
 const testH = require('./helpers');
 const permissions = require('../app/permissions');
 

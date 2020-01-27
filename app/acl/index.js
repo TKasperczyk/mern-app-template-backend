@@ -15,6 +15,7 @@ acl.config({
     decodedObjectName: 'user',
     roleSearchPath: 'user.role',
     denyCallback: (res) => {
+        //The access to the given route was denied
         return res.status(401).jsonp(
             h.generateResponse({status: false, error: 'Access violation error'})
         );

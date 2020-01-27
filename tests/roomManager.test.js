@@ -1,3 +1,5 @@
+'use strict';
+
 const redis = require('redis').createClient;
 const {promisify} = require('util');
 const config = require('../app/config');

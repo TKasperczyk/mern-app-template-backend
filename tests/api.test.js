@@ -1,3 +1,5 @@
+'use strict';
+
 const testH = require('./helpers');
 const api = require('../app/api');
 const db = require('../app/db').mongo;
@@ -51,15 +53,16 @@ describe('api', () => {
             });
             it('should apply the modifier func when it is defined', async () => {
                 const roleMock = 'roleMock';
-                const modifierFuncMock = (inputObj) => {
+                const modifierFuncMockSpy = jest.fn((inputObj) => {
                     inputObj.role = roleMock;
                     return inputObj;
-                };
+                });
                 const result = await generics.add({
                     inputObj: testH.userMocks.alt(),
                     modelName: 'data.user',
-                    modifierFunc: modifierFuncMock
+                    modifierFunc: modifierFuncMockSpy
                 });
+                expect(modifierFuncMockSpy).toHaveBeenCalled();
                 expect(result.role).toEqual(roleMock);
             });
             it('should throw when the input object\'s property is wrong', async () => {
@@ -134,22 +137,6 @@ describe('api', () => {
                     inputObj: '',
                     modelName: 'data.user',
                 })).rejects.toThrow('rong inputObj argument');
-            });
-            it('should apply the modifier func when it is defined', async () => {
-                const roleMock = 'roleMock';
-                const modifierFuncMock = (inputObj) => {
-                    inputObj.role = roleMock;
-                    return inputObj;
-                };
-                const userAdminMock = testH.userMocks.admin();
-                delete userAdminMock._id;
-                const result = await generics.update({
-                    id: userIdMock,
-                    inputObj: userAdminMock,
-                    modelName: 'data.user',
-                    modifierFunc: modifierFuncMock
-                });
-                expect(result.role).toEqual(roleMock);
             });
         });
         describe('delete', () => {

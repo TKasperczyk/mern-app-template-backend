@@ -11,12 +11,12 @@ const path = require('path');
 const h = require('../helpers');
 
 const configPath = path.resolve(__dirname, '../../config/config.json');
-//The config can be reloaded, therefore it's not const
+//This will be exported. The config can be reloaded, therefore it's not const
 let configJson = null;
 
 /**
- * @description checks if the config file exists. If so, reads its contents and parses it as a JS object
- * @throw {Error} will throw if the config file doesn't exist or it's not parsable
+ * @description checks if the config file exists. If so, reads its contents and parses it as a JS object. Assigns it to module.exports
+ * @throws {Error} will throw if the config file doesn't exist or it's not parsable
  */
 const loadConfig = () => {
     if (fs.existsSync(configPath)){
@@ -31,7 +31,8 @@ const loadConfig = () => {
     }
 };
 
+//Load the config when this module is initially required
 loadConfig();
 Object.assign(module.exports, {
-    _reload: loadConfig
+    _reload: loadConfig //configJson is already assigned to module.exports in loadConfig, so we only need to add the reload function. The underscore makes it less probable that we'll overwrite an already existing property of module.exports (i.e. configJson)
 });
