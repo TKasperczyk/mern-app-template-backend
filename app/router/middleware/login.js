@@ -11,7 +11,7 @@ const h = require('../../helpers');
 module.exports = (req, res, next) => {
     passport.authenticate('login', {session: false}, (error, user, info) => {
         if (error || !user) {
-            logger.error(`Error while authenticating: ${error}, ${info}`, {identifier: 'router login'});
+            logger.error(`Error while authenticating: ${error}`, {identifier: 'router login', meta: {info}});
             return res.status(401).jsonp(
                 h.generateResponse({
                     status: false, 
@@ -21,7 +21,7 @@ module.exports = (req, res, next) => {
         }
         req.login(user, {session: false}, (error) => {
             if (error) {
-                logger.error(`Error while logging in: ${error}, ${info}`, {identifier: 'router login'});
+                logger.error(`Error while logging in: ${error}`, {identifier: 'router login'});
                 return res.status(500).jsonp(
                     h.generateResponse({
                         status: false, 
