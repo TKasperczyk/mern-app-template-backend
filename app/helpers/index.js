@@ -100,6 +100,10 @@ module.exports = {
      * @returns {String} the generated bCrypt hash
      */
     generateHash: ({password, rounds = 12}) => {
+        //We don't need strong hashes for tests
+        if (process.env.NODE_ENV === 'test'){
+            rounds = 1;
+        }
         return bCrypt.hashSync(password, bCrypt.genSaltSync(rounds), null);
     },
     /**

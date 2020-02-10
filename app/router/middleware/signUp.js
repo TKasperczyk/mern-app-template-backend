@@ -9,9 +9,9 @@ const logger = require('../../logger').appLogger;
 const h = require('../../helpers');
 
 module.exports = (req, res, next) => {
-    passport.authenticate('register', {session: false}, (error, user, info) => {
+    passport.authenticate('signUp', {session: false}, (error, user, info) => {
         if (error || !user) {
-            logger.error(`Error while registering: ${error}, ${h.optionalStringify(info)}`, {identifier: 'router register'});
+            logger.error(`Error while signing up: ${error}, ${h.optionalStringify(info)}`, {identifier: 'router signUp'});
             return res.status(500).jsonp(
                 h.generateResponse({
                     status: false,
@@ -21,7 +21,7 @@ module.exports = (req, res, next) => {
         }
         req.login(user, {session: false}, (error) => {
             if (error) {
-                logger.error(`Error while logging in after registration: ${error}, ${h.optionalStringify(info)}`, {identifier: 'router register'});
+                logger.error(`Error while logging in after registration: ${error}, ${h.optionalStringify(info)}`, {identifier: 'router signUp'});
                 return res.status(500).jsonp(
                     h.generateResponse({
                         status: false, 
@@ -30,7 +30,7 @@ module.exports = (req, res, next) => {
                 );
             }
             const token = h.generateJwt({from: user});
-            logger.verbose(`Generated a new token for user: ${user.login}`, {identifier: 'router register'});
+            logger.verbose(`Generated a new token for user: ${user.username}`, {identifier: 'router signUp'});
             return res.status(200).jsonp(
                 h.generateResponse({
                     status: true, 

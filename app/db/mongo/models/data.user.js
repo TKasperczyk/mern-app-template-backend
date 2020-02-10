@@ -2,7 +2,7 @@
 
 module.exports = (mongoose) => {
     const userSchema = new mongoose.Schema({
-        login: {
+        username: {
             match: /^[a-zA-Z0-9_]{1,}$/,
             unique: true,
             required: true,

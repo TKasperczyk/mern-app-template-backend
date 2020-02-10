@@ -10,23 +10,14 @@ const server = require('../server.js');
 describe('router', () => {
     let runningServer;
     let app;
-    //Will be filled in the /api/signup and /api/login tests
-    let mockUser1Token = null;
-    let mockUser1Payload = null;
-    let mockUserAdminToken = null;
     const mockUser1 = testH.userMocks.basic();
     const mockUser2 = testH.userMocks.alt();
     const mockUserAdmin = testH.userMocks.admin();
 
-    //Remove mock users before and after running the tests
+    beforeEach(async () => {
+        await testH.fn.cleanUserMocks(db);
+    });
     beforeAll(async (done) => {
-        await testH.fn.cleanMockUsers(db);
-        //Add the admin user to the database
-        const mockUserAdminDb = testH.userMocks.admin();
-        delete mockUserAdminDb._id;
-        mockUserAdminDb.password = h.generateHash({password: mockUserAdminDb.password});
-        const newAdmin = new db.models['data.user'](mockUserAdminDb);
-        await newAdmin.save();
         //Run the io server
         const workerId = 1;
         runningServer = server(workerId, () => {
@@ -35,122 +26,142 @@ describe('router', () => {
         });
     });
     afterAll(async () => {
-        await testH.fn.cleanMockUsers(db);
+        await testH.fn.cleanUserMocks(db);
         //Close the connections
         runningServer.bundle.ioServer.close();
         db.mongoose.connection.close();
     });
     
     describe('/api/signup', () => {
-        it('should allow for user registration', async () => {
+        it('should allow users to sign up', async () => {
             let res = await supertest(app)
                 .post('/api/signup')
-                .send({login: mockUser1.login, password: mockUser1.password})
+                .send({username: mockUser1.username, password: mockUser1.password})
                 .expect(200);
             expect(res.body).toHaveProperty('data');
-            mockUser1Token = res.body.data;
         });
-        it('should return a proper JWT', () => {
+        it('should return a proper JWT', async () => {
+            let res = await supertest(app)
+                .post('/api/signup')
+                .send({username: mockUser1.username, password: mockUser1.password})
+                .expect(200);
+            const mockUser1Token = res.body.data;
             expect(typeof mockUser1Token).toEqual('string');
             expect(mockUser1Token.length > 0).toBeTruthy();
-            mockUser1Payload = jwt.decode(mockUser1Token);
-            expect(mockUser1Payload).toHaveProperty('login');
-            expect(mockUser1Payload.login).toEqual(mockUser1.login);
+            const mockUser1Payload = jwt.decode(mockUser1Token);
+            expect(mockUser1Payload).toHaveProperty('username');
+            expect(mockUser1Payload.username).toEqual(mockUser1.username);
             expect(mockUser1Payload).not.toHaveProperty('password');
         });
-        it('should not allow for registering with an existing login (username)', async () => {
-            const res = await supertest(app)
+        it('should not allow for signing up with an existing username', async () => {
+            let res = await supertest(app)
                 .post('/api/signup')
-                .send({login: mockUser1.login, password: mockUser1.password})
+                .send({username: mockUser1.username, password: mockUser1.password})
+                .expect(200);
+            res = await supertest(app)
+                .post('/api/signup')
+                .send({username: mockUser1.username, password: mockUser1.password})
                 .expect(500);
             expect(res.body).toHaveProperty('error');
             expect(res.body.error).toEqual('Username already taken');
         });
-        it('should not allow for registering with an empty login (username) or password', async () => {
+        it('should not allow for signing up with an empty username or password', async () => {
             let res = await supertest(app)
                 .post('/api/signup')
-                .send({login: '', password: mockUser1.password})
+                .send({username: '', password: mockUser1.password})
                 .expect(500);
             expect(res.body).toHaveProperty('status');
             expect(res.body.status).toEqual(false);
 
             res = await supertest(app)
                 .post('/api/signup')
-                .send({login: mockUser2.login, password: ''})
+                .send({username: mockUser1.username, password: ''})
                 .expect(500);
             expect(res.body).toHaveProperty('status');
             expect(res.body.status).toEqual(false);
 
             res = await supertest(app)
                 .post('/api/signup')
-                .send({login: mockUser2.login})
+                .send({username: mockUser1.username})
                 .expect(500);
             expect(res.body).toHaveProperty('status');
             expect(res.body.status).toEqual(false);
         });
     });
 
-    describe('/api/login', () => {
-        it('should not allow to login with wrong credentials', async () => {
+    describe('/api/signin', () => {
+        it('should not allow to sign in with wrong credentials', async () => {
             let res = await supertest(app)
-                .post('/api/login')
-                .send({login: mockUser2.login, password: mockUser2.password})
+                .post('/api/signin')
+                .send({username: mockUser1.username, password: mockUser1.password})
                 .expect(401);
             expect(res.body).toHaveProperty('status');
             expect(res.body.status).toEqual(false);
             expect(res.body.error).toEqual('Unauthorized');
         });
-        it('should not allow to login with empty credentials', async () => {
+        it('should not allow to sign in with empty credentials', async () => {
             let res = await supertest(app)
-                .post('/api/login')
-                .send({login: '', password: mockUser1.password})
+                .post('/api/signin')
+                .send({username: '', password: mockUser1.password})
                 .expect(401);
             expect(res.body).toHaveProperty('status');
             expect(res.body.status).toEqual(false);
 
             res = await supertest(app)
-                .post('/api/login')
-                .send({login: mockUser2.login, password: ''})
+                .post('/api/signin')
+                .send({username: mockUser2.username, password: ''})
                 .expect(401);
             expect(res.body).toHaveProperty('status');
             expect(res.body.status).toEqual(false);
 
             res = await supertest(app)
-                .post('/api/login')
-                .send({login: mockUser2.login})
+                .post('/api/signin')
+                .send({username: mockUser2.username})
                 .expect(401);
             expect(res.body).toHaveProperty('status');
             expect(res.body.status).toEqual(false);
         });
-        it('should allow to login with proper credentials and return a correct JWT token', async () => {
-            //User
+        it('should allow to sign in with proper credentials and return a correct JWT token', async () => {
             let res = await supertest(app)
-                .post('/api/login')
-                .send({login: mockUser1.login, password: mockUser1.password})
+                .post('/api/signup')
+                .send({username: mockUserAdmin.username, password: mockUserAdmin.password})
                 .expect(200);
-            expect(res.body).toHaveProperty('data');
-            expect(res.body.status).toEqual(true);
 
-            const loginToken = res.body.data;
-            expect(typeof loginToken).toEqual('string');
-            expect(loginToken.length > 0).toBeTruthy();
-            const loginPayload = jwt.decode(loginToken);
-            expect(loginPayload).toHaveProperty('login');
-            expect(loginPayload.login).toEqual(mockUser1.login);
-            expect(loginPayload).not.toHaveProperty('password');
-
-            //Admin
             res = await supertest(app)
-                .post('/api/login')
-                .send({login: mockUserAdmin.login, password: mockUserAdmin.password})
+                .post('/api/signin')
+                .send({username: mockUserAdmin.username, password: mockUserAdmin.password})
                 .expect(200);
             expect(res.body).toHaveProperty('data');
             expect(res.body.status).toEqual(true);
-            mockUserAdminToken = res.body.data;
+            const signInToken = res.body.data;
+            expect(typeof signInToken).toEqual('string');
+            expect(signInToken.length > 0).toBeTruthy();
+            const signInPayload = jwt.decode(signInToken);
+            expect(signInPayload).toHaveProperty('username');
+            expect(signInPayload.username).toEqual(mockUserAdmin.username);
+            expect(signInPayload).not.toHaveProperty('password');
         });
     });
 
     describe('/api/user', () => {
+        let mockUser1Payload, mockUser1Token, mockUserAdminToken;
+        beforeEach(async () => {
+            await testH.fn.cleanUserMocks(db);
+
+            let res = await supertest(app)
+                .post('/api/signup')
+                .send({username: mockUserAdmin.username, password: mockUserAdmin.password})
+                .expect(200);
+            mockUserAdminToken = res.body.data;
+            await db.models['data.user'].updateOne({username: mockUserAdmin.username}, {$set: {role: 'admin'}});
+
+            res = await supertest(app)
+                .post('/api/signup')
+                .send({username: mockUser1.username, password: mockUser1.password})
+                .expect(200);
+            mockUser1Token = res.body.data;
+            mockUser1Payload = jwt.decode(mockUser1Token);
+        });
         it('should not allow to access any method without a valid token', async () => {
             await supertest(app)
                 .get('/api/user')
@@ -160,7 +171,7 @@ describe('router', () => {
                 .expect(401);
             await supertest(app)
                 .put(`/api/user/${mockUser1Payload._id}`)
-                .send({login: 'test'})
+                .send({username: 'test'})
                 .expect(401);
             await supertest(app)
                 .delete(`/api/user/${mockUser1Payload._id}`)
@@ -172,8 +183,8 @@ describe('router', () => {
                 .set('Authorization', `Bearer ${mockUser1Token}`)
                 .expect(200);
             expect(res.body.status).toEqual(true);
-            expect(res.body.data).toHaveProperty('login');
-            expect(res.body.data.login).toEqual(mockUser1.login);
+            expect(res.body.data).toHaveProperty('username');
+            expect(res.body.data.username).toEqual(mockUser1.username);
             expect(res.body.data).not.toHaveProperty('password');
         });
         it('should not allow to GET all users with a valid token (non-admin)', async () => {
@@ -204,31 +215,31 @@ describe('router', () => {
             const res = await supertest(app)
                 .patch(`/api/user/${mockUser1Payload._id}`)
                 .set('Authorization', `Bearer ${mockUser1Token}`)
-                .send({data: {login: mockUser2.login}})
+                .send({data: {username: mockUser2.username}})
                 .expect(200);
             expect(res.body.status).toEqual(true);
-            expect(res.body.data).toHaveProperty('login');
-            expect(res.body.data.login).toEqual(mockUser2.login);
+            expect(res.body.data).toHaveProperty('username');
+            expect(res.body.data.username).toEqual(mockUser2.username);
             expect(res.body.data).not.toHaveProperty('password');
-            //Restore the original login
+            //Restore the original username
             await supertest(app)
                 .patch(`/api/user/${mockUser1Payload._id}`)
                 .set('Authorization', `Bearer ${mockUser1Token}`)
-                .send({data: {login: mockUser1.login}})
+                .send({data: {username: mockUser1.username}})
                 .expect(200);
         });
         it('should hash the password when PATCHing the current user with a valid token', async () => {
             const res = await supertest(app)
                 .patch(`/api/user/${mockUser1Payload._id}`)
                 .set('Authorization', `Bearer ${mockUser1Token}`)
-                .send({data: {login: mockUser1.login, password: mockUser1.password}})
+                .send({data: {username: mockUser1.username, password: mockUser1.password}})
                 .expect(200);
             expect(res.body.status).toEqual(true);
-            expect(res.body.data).toHaveProperty('login');
-            expect(res.body.data.login).toEqual(mockUser1.login);
+            expect(res.body.data).toHaveProperty('username');
+            expect(res.body.data.username).toEqual(mockUser1.username);
             expect(res.body.data).not.toHaveProperty('password');
-            //Restore the original login
-            const user = await db.models['data.user'].findOne({login: mockUser1.login}).select('+password').lean();
+            //Restore the original username
+            const user = await db.models['data.user'].findOne({username: mockUser1.username}).select('+password').lean();
             expect(user).toHaveProperty('password');
             expect(user.password.length > 0).toBeTruthy();
             expect(h.isValidPassword({hashedPassword: user.password, cleartextPassword: mockUser1.password})).toBe(true);
@@ -237,7 +248,7 @@ describe('router', () => {
             const res = await supertest(app)
                 .patch(`/api/user`)
                 .set('Authorization', `Bearer ${mockUser1Token}`)
-                .send({data: {login: mockUser2.login}})
+                .send({data: {username: mockUser2.username}})
                 .expect(401);
             expect(res.body.status).toEqual(false);
             expect(res.body.error).toEqual('Access violation error');
@@ -246,7 +257,7 @@ describe('router', () => {
             const res = await supertest(app)
                 .patch(`/api/user/${mockUser1Payload._id}`)
                 .set('Authorization', `Bearer ${mockUser1Token}`)
-                .send({data: {role: 'admin', login: mockUser1.login}})
+                .send({data: {role: 'admin', username: mockUser1.username}})
                 .expect(200);
             expect(res.body.status).toEqual(true);
             expect(res.body.data).toHaveProperty('role');
@@ -261,7 +272,7 @@ describe('router', () => {
             const res = await supertest(app)
                 .patch(`/api/user/${mockUser1._id}`)
                 .set('Authorization', `Bearer ${mockUser1Token}`)
-                .send({data: {login: 'admin'}})
+                .send({data: {username: 'admin'}})
                 .expect(401);
             expect(res.body.status).toEqual(false);
             expect(res.body.error).toEqual('Something went wrong while performing an API call: You don\'t have sufficient permissions to perform this action');
@@ -270,12 +281,12 @@ describe('router', () => {
             const res = await supertest(app)
                 .patch(`/api/user/${mockUser1Payload._id}`)
                 .set('Authorization', `Bearer ${mockUserAdminToken}`)
-                .send({data: {login: mockUser1.login}})
+                .send({data: {username: mockUser1.username}})
                 .expect(200);
             expect(res.body.status).toEqual(true);
             expect(res.body.error).toBeFalsy();
-            expect(res.body.data).toHaveProperty('login');
-            expect(res.body.data.login).toEqual(mockUser1.login);
+            expect(res.body.data).toHaveProperty('username');
+            expect(res.body.data.username).toEqual(mockUser1.username);
         });
         it('should not allow to PATCH a user with a valid token (admin) and missing mandatory arguments', async () => {
             const res = await supertest(app)
@@ -289,7 +300,7 @@ describe('router', () => {
             const res = await supertest(app)
                 .delete(`/api/user`)
                 .set('Authorization', `Bearer ${mockUser1Token}`)
-                .send({data: {login: mockUser2.login}})
+                .send({data: {username: mockUser2.username}})
                 .expect(401);
             expect(res.body.status).toEqual(false);
             expect(res.body.error).toEqual('Access violation error');
@@ -313,9 +324,14 @@ describe('router', () => {
     });
     it('should return 404 for non-existing routes', async () => {
         const nonExistingRouteMock = '/nonExistingRoute';
+        let res = await supertest(app)
+            .post('/api/signup')
+            .send({username: mockUser1.username, password: mockUser1.password})
+            .expect(200);
+        const mockUser1Token = res.body.data;
         await supertest(app)
             .get(nonExistingRouteMock)
-            .set('Authorization', `Bearer ${mockUserAdminToken}`)
+            .set('Authorization', `Bearer ${mockUser1Token}`)
             .expect(404);
     });
 });

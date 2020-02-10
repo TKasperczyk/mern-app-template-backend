@@ -43,6 +43,9 @@ describe('roomManager', () => {
         }
         await rm.destroy();
     });
+    beforeEach(async () => {
+        await rClientPromisified.flushdb();
+    });
     afterEach(() => {
         jest.restoreAllMocks();
     });
@@ -115,24 +118,28 @@ describe('roomManager', () => {
         }).not.toThrow();
     });
     it('getRoom should return the created room which should be active by default', async () => {
+        await rm.addRoom(mockNamespace, mockRoom1);
         const room = await rm.getRoom(mockNamespace, mockRoom1);
         expect(room).toBeTruthy();
         expect(room).toHaveProperty('clients');
         expect(room.active).toBe(true);
     });
     it('getRooms should return the created room', async () => {
+        await rm.addRoom(mockNamespace, mockRoom1);
         const rooms = await rm.getRooms(mockNamespace);
         expect(rooms).toBeTruthy();
         expect(rooms).toHaveProperty(mockRoom1);
     });
     it('roomEmpty should return false when there are no clients in a room', async () => {
+        await rm.addRoom(mockNamespace, mockRoom1);
         expect(await rm.roomEmpty(mockNamespace, mockRoom1)).toEqual(true);
     });
     it('roomExists should return true when the room exists', async () => {
+        await rm.addRoom(mockNamespace, mockRoom1);
         expect(await rm.roomExists(mockNamespace, mockRoom1)).toEqual(true);
     });
-    it('roomExists should return false when the room doesn\'t exist', async () => {
-        expect(await rm.roomExists(mockNamespace, mockRoom2)).toEqual(false);
+    it('roomExists should return false when the room doesn not exist', async () => {
+        expect(await rm.roomExists(mockNamespace, mockRoom1)).toEqual(false);
     });
     it('deactivateRoom should set the active flag to false', async () => {
         await rm.deactivateRoom(mockNamespace, mockRoom1);
@@ -140,7 +147,7 @@ describe('roomManager', () => {
         expect(room).toBeTruthy();
         expect(room.active).toBe(false);
     });
-    it('deactivateRoom create a new room when it doesn\'t exist', async () => {
+    it('deactivateRoom create a new room when it does not exist', async () => {
         await rm.deactivateRoom(mockNamespace, mockRoom3);
         const room3 = await rm.getRoom(mockNamespace, mockRoom3);
         expect(room3).toBeTruthy();
@@ -152,7 +159,7 @@ describe('roomManager', () => {
         expect(room).toBeTruthy();
         expect(room.active).toBe(true);
     });
-    it('activateRoom should create a new room when it doesn\'t exist', async () => {
+    it('activateRoom should create a new room when it does not exist', async () => {
         await rm.activateRoom(mockNamespace, mockRoom2);
         const room2 = await rm.getRoom(mockNamespace, mockRoom2);
         expect(room2).toBeTruthy();
@@ -166,6 +173,7 @@ describe('roomManager', () => {
         expect(room.clients[0]).toBe('testClientId');
     });
     it('removeClientFromRoom should delete a client from the given room', async () => {
+        await rm.addRoom(mockNamespace, mockRoom1);
         await rm.removeClientFromRoom(mockNamespace, mockRoom1, 'testClientId');
         const room = await rm.getRoom(mockNamespace, mockRoom1);
         expect(room).toBeTruthy();
@@ -210,6 +218,8 @@ describe('roomManager', () => {
         expect(room2.clients.length).toBe(1);
     });
     it('getRooms should return all of the created rooms', async () => {
+        await rm.addRoom(mockNamespace, mockRoom1);
+        await rm.addRoom(mockNamespace, mockRoom2);
         const rooms = await rm.getRooms(mockNamespace);
         expect(rooms).toBeTruthy();
         expect(rooms).toHaveProperty(mockRoom1);

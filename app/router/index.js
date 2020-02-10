@@ -10,8 +10,8 @@ const acl = require('../acl');
 const permissions = require('../permissions');
 const logger = require('../logger').appLogger;
 const api = require('../api');
-const loginMiddleware = require('./middleware/login');
-const registerMiddleware = require('./middleware/register');
+const signInMiddleware = require('./middleware/signIn');
+const signUpMiddleware = require('./middleware/signUp');
 const notFoundMiddleware = require('./middleware/notFound');
 
 /**
@@ -44,7 +44,7 @@ const routes = {
             } else {
                 delete req.body.data.password;
             }
-            performApiCall({req, res, apiFunc: api.controllers['data.user'].update, args: { id: req.params.id, user: req.body.data }});
+            performApiCall({req, res, apiFunc: api.controllers['data.user'].update, args: { id: req.params.id, inputObj: req.body.data }});
         },
     },
     'delete': {
@@ -97,7 +97,7 @@ const registerRoutes = (routes, method) => {
  */
 const handleError = (req, res, error, statusCode = 500) => {
     const optionallyStringifiedError = h.optionalStringify(error);
-    logger.error(`Error (req by ${req.user.login}): ${optionallyStringifiedError}`, {identifier: `router ${req.method} ${req.url}`, meta: {query: req.query, params: req.params}});
+    logger.error(`Error (req by ${req.user.username}): ${optionallyStringifiedError}`, {identifier: `router ${req.method} ${req.url}`, meta: {query: req.query, params: req.params}});
     return res.status(statusCode).jsonp(
         h.generateResponse({
             status: false, 
@@ -121,7 +121,7 @@ const handleError = (req, res, error, statusCode = 500) => {
 const performApiCall = ({req, res, apiFunc, args, successCallback = null, logging = true, directPipe = false, directPipeHeaders = []}) => {
     //Generate a new call id for this request - it will be passed to API functions for tracing the request in our logger
     const callId = h.generateCallId();
-    logger.verbose(`${req.user.login} called ${apiFunc.name}`, {callId, identifier: `router ${req.method} ${req.url}`, logging, meta: {query: req.query, params: req.params, args}});
+    logger.verbose(`${req.user.username} called ${apiFunc.name}`, {callId, identifier: `router ${req.method} ${req.url}`, logging, meta: {query: req.query, params: req.params, args}});
     //Call the API func with the provided arguments and the generated call id 
     apiFunc(Object.assign({}, args, {callId})).then((result) => {
         //Every API function MUST return some result
@@ -152,18 +152,18 @@ const performApiCall = ({req, res, apiFunc, args, successCallback = null, loggin
 
 /**
     Uses the registerRoutes function to generate routing for the given routes object.
-    Inserts the login route
+    Inserts the sign in route
 **/
 /**
- * @description adds the signup (register), login and notFound routes. Secures every route in the routes object with JWT auth and the acl module
+ * @description adds the signup (register), sign in and notFound routes. Secures every route in the routes object with JWT auth and the acl module
  * @param {Object} [routes] an object containing all the routes that should be registered (i.e. the object defined at the beginning)
  * @returns {Object} an instance of configured Express Router
  */
 const route = (routes) => {
-    //Allow users to log in and receive a JWT token
-    router.post('/api/login', loginMiddleware);
-    //Allow users to register and receive a JWT token
-    router.post('/api/signup', registerMiddleware);
+    //Allow users to sign in and receive a JWT token
+    router.post('/api/signin', signInMiddleware);
+    //Allow users to sign up and receive a JWT token
+    router.post('/api/signup', signUpMiddleware);
     //Secure all routes with JWT authentication
     router.use(
         passport.authenticate('jwt', { session: false, failWithError: true }), 
@@ -181,7 +181,7 @@ const route = (routes) => {
     //Secure all routes with an access list
     router.use(acl.authorize.unless({
         path: [
-            '/api/login',
+            '/api/signin',
             '/api/logout',
             '/api/signup'
         ]

@@ -7,14 +7,11 @@ const h = require('../app/helpers');
 const config = require('../app/config');
 
 describe('db', () => {
-    let newUserModel;
-    let retrievedUser;
-
-    beforeAll(async () => {
-        await testH.fn.cleanMockUsers(db);
+    beforeEach(() => {
+        return testH.fn.cleanUserMocks(db);
     });
     afterAll(async () => {
-        await testH.fn.cleanMockUsers(db);
+        await testH.fn.cleanUserMocks(db);
         db.mongoose.connection.close();
     });
     
@@ -54,34 +51,43 @@ describe('db', () => {
         });
         config._reload();
     });
-    it('should allow to create a user', async () => {
-        newUserModel = new db.models['data.user'](testH.userMocks.basic());
+    it('should allow to create a document', async () => {
+        const newUserModel = new db.models['data.user'](testH.userMocks.basic());
         await expect(newUserModel.save()).resolves.not.toThrow();
     });
-    it('should not allow to create a user with an existing login (username)', async () => {
-        newUserModel = new db.models['data.user'](testH.userMocks.basic());
-        await expect(newUserModel.save()).rejects.toEqual(expect.any(Error));
+    it('should not allow to create a user with an existing username', async () => {
+        const newUserModel1 = new db.models['data.user'](testH.userMocks.basic());
+        const newUserModel2 = new db.models['data.user'](testH.userMocks.basic());
+        await expect(newUserModel1.save()).resolves.not.toThrow();
+        await expect(newUserModel2.save()).rejects.toEqual(expect.any(Error));
     });
     it('should not allow to create a user with a wrong username', async () => {
-        //Test empty logins
-        newUserModel = new db.models['data.user'](testH.userMocks.basic());
-        newUserModel.login = '';
+        //Test empty usernames
+        const newUserModel = new db.models['data.user'](testH.userMocks.basic());
+        newUserModel.username = '';
         await expect(newUserModel.save()).rejects.toEqual(expect.any(Error));
-        //Test special char logins
-        newUserModel.login = 'someChars@#';
+        //Test special char usernames
+        newUserModel.username = 'someChars@#';
         await expect(newUserModel.save()).rejects.toEqual(expect.any(Error));
     });
     it('should set the default role for the created user', () => {
+        const newUserModel = new db.models['data.user'](testH.userMocks.basic());
         expect(newUserModel.role).toBe('user');
     });
     it('should hide the password when retrieving the created user', async () => {
+        const newUserModel = new db.models['data.user'](testH.userMocks.basic());
+        await newUserModel.save();
+        let retrievedUser;
         await expect((async () => {
-            retrievedUser = await db.models['data.user'].find({login: newUserModel.login});
+            retrievedUser = await db.models['data.user'].find({username: newUserModel.username});
         })()).resolves.not.toThrow();
         expect(retrievedUser).toBeTruthy();
         expect(retrievedUser.password).toBe(undefined);
     });
     it('should allow to delete the created user', async () => {
+        const newUserModel = new db.models['data.user'](testH.userMocks.basic());
+        await newUserModel.save();
+        let retrievedUser;
         await expect((async () => {
             const newUserId = newUserModel._id.toString();
             await newUserModel.delete();

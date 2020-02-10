@@ -6,7 +6,7 @@
  * - checking if the supplied credentials are correct
  * - creating passport authentication strategies
  * - authorizing socket.io connections
- * It exports a function that registers the three core passport strategies (jwt, register (signup) and local) used in the app.
+ * It exports a function that registers the three core passport strategies (jwt, signUp and local) used in the app.
  * It also exports a function that allows for securing socket.io connections
  */
 
@@ -23,31 +23,31 @@ const db = require('../db').mongo;
 const logger = require('../logger').appLogger;
 
 /**
- * @description checks the supplied password and login against the user's mongoDB record
+ * @description checks the supplied password and username against the user's mongoDB record
  * @param {Object}   [req] the express request object passed by Passport  
- * @param {String}   [login] the user's login
+ * @param {String}   [username] the user's username
  * @param {String}   [password] the user's password 
  * @param {Function} [done] the callback - http://www.passportjs.org/docs/configure/#verify-callback
  * @returns {?} the result of calling the callback
  */
-const localAuthProcessor = async (req, login, password, done) => {
-    logger.debug(`Starting to authenticate: ${login}`, {identifier: 'auth localAuthProcessor'});
+const signInProcessor = async (req, username, password, done) => {
+    logger.debug(`Starting to authenticate: ${username}`, {identifier: 'auth signInProcessor'});
     try {
-        //Search for a user with the given login in the mongo database
-        const user = await db.models['data.user'].findOne({login}).select('+password').lean(); //Lean makes it faster and we don't need to populate anything and we don't need to populate anything
+        //Search for a user with the given username in the mongo database
+        const user = await db.models['data.user'].findOne({username}).select('+password').lean(); //Lean makes it faster and we don't need to populate anything and we don't need to populate anything
         if (!user){ //If the user wasn't found return an auth error
-            logger.warn(`Login attempt failed from ${req.connection.remoteAddress}: user '${login}' doesn't exist`, {identifier: 'auth localAuthProcessor'});
+            logger.warn(`Sign in attempt failed from ${req.connection.remoteAddress}: user '${username}' doesn't exist`, {identifier: 'auth signInProcessor'});
             return done('Authentication error', false);
         } else if (!h.isValidPassword({hashedPassword: user.password, cleartextPassword: password})){ //If the user was found, but his password wasn't correct return an auth error
-            logger.warn(`Login attempt failed from ${req.connection.remoteAddress}: password for '${login}' is incorrect`, {identifier: 'auth localAuthProcessor'});
+            logger.warn(`Sign in attempt failed from ${req.connection.remoteAddress}: password for '${username}' is incorrect`, {identifier: 'auth signInProcessor'});
             return done('Authentication error', false);
         } else { //Everything ok, return the found user without his password (for security)
-            logger.silly(`Login attempt of '${login}' succeeded from ${req.connection.remoteAddress}`, {identifier: 'auth localAuthProcessor'});
+            logger.silly(`Sign in attempt of '${username}' succeeded from ${req.connection.remoteAddress}`, {identifier: 'auth signInProcessor'});
             delete user.password;
             return done(null, user);
         }
     } catch(error) { //Something went wrong, log and return an error
-        logger.error(`Error while trying to find a user '${login}': ${h.optionalStringify(error)}`, {identifier: 'auth localAuthProcessor'});
+        logger.error(`Error while trying to find a user '${username}': ${h.optionalStringify(error)}`, {identifier: 'auth signInProcessor'});
         return done('Unknown authentication error', false);
     }
 };
@@ -60,45 +60,45 @@ const localAuthProcessor = async (req, login, password, done) => {
  * @returns {?} the result of calling the callback
  */
 const jwtAuthProcessor = async (req, jwtPayload, done) => {
-    logger.debug(`Starting to authenticate '${jwtPayload.login}'`, {identifier: 'auth jwtAuthProcessor'});
+    logger.debug(`Starting to authenticate '${jwtPayload.username}'`, {identifier: 'auth jwtAuthProcessor'});
     try{
         //Extract the user's ID and search for it in the mongo database
         const user = await db.models['data.user'].findById(jwtPayload._id).select('-password').lean(); //Lean makes it faster and we don't need to populate anything
         if (!user){ //If the user wasn't found return an auth error
-            logger.warn(`Login attempt failed from '${req.connection.remoteAddress}': user '${jwtPayload.login}' doesn't exist`, {identifier: 'auth jwtAuthProcessor'});
+            logger.warn(`Sign in attempt failed from '${req.connection.remoteAddress}': user '${jwtPayload.username}' doesn't exist`, {identifier: 'auth jwtAuthProcessor'});
             return done('Authentication error', false);
         } else { //Everything ok, return the found user object (the password was already deselected)
-            logger.silly(`Login attempt of '${jwtPayload.login}' succeeded from '${req.connection.remoteAddress}'`, {identifier: 'auth jwtAuthProcessor'});
+            logger.silly(`Sign in attempt of '${jwtPayload.username}' succeeded from '${req.connection.remoteAddress}'`, {identifier: 'auth jwtAuthProcessor'});
             return done(null, user);
         }
     } catch(error) { //Something went wrong, log and return an error
-        logger.error(`Error while trying to find a user '${jwtPayload.login}': ${h.optionalStringify(error)}`, {identifier: 'auth jwtAuthProcessor'});
+        logger.error(`Error while trying to find a user '${jwtPayload.username}': ${h.optionalStringify(error)}`, {identifier: 'auth jwtAuthProcessor'});
         return done('Unknown authentication error', false);
     }
 };
 
 /**
- * @description creates a new user if the login isn't already taken. Sets the role to: user
+ * @description creates a new user if the username isn't already taken. Sets the role to: user
  * @param {Object}   [req] the express request object passed by Passport  
- * @param {String}   [login] the user's login
+ * @param {String}   [username] the user's username
  * @param {String}   [password] the user's password 
  * @param {Function} [done] the callback - http://www.passportjs.org/docs/configure/#verify-callback
  * @returns {?} the result of calling the callback
  */
-const registerProcessor = async (req, login, password, done) => {
-    logger.verbose(`Starting to register a new user: ${login}`, {identifier: 'auth registerProcessor'});
+const signUpProcessor = async (req, username, password, done) => {
+    logger.verbose(`Starting to sign up a new user: ${username}`, {identifier: 'auth signUpProcessor'});
     try {
-        //Search for a user with the given login in the mongo database
-        const user = await db.models['data.user'].findOne({login}).select('-password').lean(); //Lean makes it faster and we don't need to populate anything
-        if (user){ //If the user was found return an error because logins must be unique
-            logger.warn(`Register attempt failed from ${req.connection.remoteAddress}: user ${login} already exists`, {identifier: 'auth registerProcessor'});
+        //Search for a user with the given username in the mongo database
+        const user = await db.models['data.user'].findOne({username}).select('-password').lean(); //Lean makes it faster and we don't need to populate anything
+        if (user){ //If the user was found return an error because usernames must be unique
+            logger.warn(`Sign up attempt failed from ${req.connection.remoteAddress}: user ${username} already exists`, {identifier: 'auth signUpProcessor'});
             return done('Username already taken', false);
         } else { //Everything ok, create a new user and return it without the password (for security)
             //We store password hashes in the database
             const hashedPassword = h.generateHash({password});
             //Create a new user in the mongo database
-            const user = await db.models['data.user'].create({login, password: hashedPassword, role: 'user'});
-            logger.debug(`Register attempt of ${login} succeeded from ${req.connection.remoteAddress}`, {identifier: 'auth registerProcessor'});
+            const user = await db.models['data.user'].create({username, password: hashedPassword, role: 'user'});
+            logger.debug(`Sign up attempt of ${username} succeeded from ${req.connection.remoteAddress}`, {identifier: 'auth signUpProcessor'});
             //We don't need mongoose stuff in the returned object
             const userObj = user.toObject();
             //Delete the password from the returned object (for security)
@@ -106,7 +106,7 @@ const registerProcessor = async (req, login, password, done) => {
             return done(null, userObj);
         }
     } catch(error) { //Something went wrong, log and return an error
-        logger.error(`Error while trying to find a user ${login}: ${h.optionalStringify(error)}`, {identifier: 'auth registerProcessor'});
+        logger.error(`Error while trying to find a user ${username}: ${h.optionalStringify(error)}`, {identifier: 'auth signUpProcessor'});
         return done('Unknown authentication error', false);
     }
 };
@@ -117,15 +117,15 @@ module.exports = {
      * @param {Object} [io = null] the result of require('socket.io')(httpServer)
      */
     registerStrategies: (io) => {
-        passport.use('login', new localStrategy({
+        passport.use('signIn', new localStrategy({
             passReqToCallback: true,
-            usernameField: 'login',
+            usernameField: 'username',
             passwordField: 'password',
             session: false //No sessions, we only use JWT
-        }, localAuthProcessor));
+        }, signInProcessor));
         passport.use('jwt', new jwtStrategy({
             passReqToCallback: true,
-            usernameField: 'login',
+            usernameField: 'username',
             passwordField: 'password',
             jwtFromRequest: jwtExtrator.fromAuthHeaderAsBearerToken(),
             secretOrKey: config.jwtKey,
@@ -133,12 +133,12 @@ module.exports = {
                 maxAge: '1d' //That's fixed for now. We can move that to config if needed
             }
         }, jwtAuthProcessor));
-        passport.use('register', new localStrategy({
+        passport.use('signUp', new localStrategy({
             passReqToCallback: true,
-            usernameField: 'login',
+            usernameField: 'username',
             passwordField: 'password',
             session: false //No sessions, we only use JWT
-        }, registerProcessor));
+        }, signUpProcessor));
         //
         if (io){
             module.exports.secureIo(io);
@@ -190,8 +190,8 @@ module.exports = {
         }));
     },
     __private: { //For tests
-        registerProcessor,
-        localAuthProcessor,
+        signUpProcessor,
+        signInProcessor,
         jwtAuthProcessor
     }
 };
