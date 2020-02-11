@@ -1,15 +1,14 @@
 {
+    "plugins": ["jest"],
+    "extends": "eslint:recommended",
+    "parserOptions": {
+        "ecmaVersion": 6
+    },
     "env": {
         "browser": true,
         "es6": true,
         "node": true,
-        "jquery": true,
-        "jest/globals": true
-    },
-    "plugins": ["jest"],
-    "extends": "eslint:recommended",
-    "parserOptions": {
-        "ecmaVersion": 2018
+        "jest": true
     },
     "rules": {
         "indent": ["error", 4, {
