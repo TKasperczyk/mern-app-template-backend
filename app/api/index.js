@@ -31,7 +31,7 @@ const generics = {
         logger.api(`Adding a new ${modelName}`, {logging, identifier: `api ${logPathPrefix}${modelName} add`, meta: {inputObj}, callId});
         try{
             //Make sure that the input object is, in fact, an object
-            if (inputObj === undefined || typeof inputObj !== 'object'){
+            if (typeof inputObj !== 'object'){
                 throw new Error('Wrong inputObj argument');
             }
             //Make sure that the given model exists in mongoose 
@@ -76,7 +76,7 @@ const generics = {
         logger.api(`Deleting a ${modelName}`, {logging, identifier: `api ${logPathPrefix}${modelName} delete`, meta: {id}, callId});
         try{
             //Check if the document ID is correct
-            if (id === undefined || typeof id !== 'string' || !(/^[a-fA-F0-9]{24}$/).test(id)){
+            if (typeof id !== 'string' || !(/^[a-fA-F0-9]{24}$/).test(id)){
                 throw new Error('Wrong id argument');
             }
             //Find and remove the document from the database
@@ -110,11 +110,11 @@ const generics = {
         logger.api(`Updating a ${modelName}`, {logging, identifier: `api ${logPathPrefix}${modelName} update`, meta: {id, inputObj}, callId});
         try{
             //Check if the document ID is correct
-            if (id === undefined || typeof id !== 'string' || !(/^[a-fA-F0-9]{24}$/).test(id)){
+            if (typeof id !== 'string' || !(/^[a-fA-F0-9]{24}$/).test(id)){
                 throw new Error(`Wrong id argument: ${id === undefined ? `undefined` : id} ${typeof id} ${typeof id === `string` ? !(/^[a-fA-F0-9]{24}$/).test(id) : 'regex not applicable'}`);
             }
             //Make sure that the input object is, in fact, an object
-            if (inputObj === undefined || typeof inputObj !== 'object'){
+            if (typeof inputObj !== 'object'){
                 throw new Error(`Wrong inputObj argument`);
             }
             //Make sure that the given model exists in mongoose 
