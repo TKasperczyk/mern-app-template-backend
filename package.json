@@ -52,7 +52,7 @@
     "passport-jwt.socketio": "^0.1.1",
     "passport-local": "^1.0.0",
     "redis": "^3.0.0",
-    "snyk": "^1.283.0",
+    "snyk": "^1.330.1",
     "socket.io": "^2.3.0",
     "socket.io-redis": "^5.2.0",
     "winston": "^3.2.1",
